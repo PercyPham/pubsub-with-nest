@@ -10,7 +10,7 @@ export class ServiceAController {
 
   @Get()
   publishMessage() {
-    this.serviceA.publishOrderCreatedWithMessage('hahaha');
+    this.serviceA.createOrderWithID(15);
     return 'OK';
   }
 }

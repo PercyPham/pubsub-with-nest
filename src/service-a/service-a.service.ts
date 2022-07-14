@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { OrderCreatedEventData } from 'src/service-a-contract/order-created.topic';
 import {
   OrderCreatedEventPublisher,
   OrderCreatedEventPublisherSymbol,
@@ -13,7 +14,8 @@ export class ServiceAService {
     private readonly orderCreatedEventPublisher: OrderCreatedEventPublisher,
   ) {}
 
-  public publishOrderCreatedWithMessage(message: string): void {
-    this.orderCreatedEventPublisher.publishEventWith(message);
+  public createOrderWithID(orderID: number): void {
+    const eventData: OrderCreatedEventData = { orderID };
+    this.orderCreatedEventPublisher.publishEventWith(eventData);
   }
 }

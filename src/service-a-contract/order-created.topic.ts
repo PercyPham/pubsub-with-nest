@@ -8,7 +8,7 @@ import {
 
 export const OrderCreatedTopic = Symbol('OrderCreated');
 
-export type OrderCreatedEventData = string;
+export type OrderCreatedEventData = { orderID: number };
 export type OrderCreatedEvent = DomainEvent<OrderCreatedEventData>;
 
 @Injectable()

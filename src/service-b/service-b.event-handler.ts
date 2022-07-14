@@ -17,8 +17,10 @@ export class ServiceBEventHandler {
   }
 
   logEvent(event: OrderCreatedEvent) {
+    const topic = event.topic.toString();
+    const orderID = event.data?.orderID;
     console.log(
-      `> Log from Service B: receiving event: ${JSON.stringify(event)}`,
+      `> Log from Service B: receiving event from topic: ${topic}: with orderID: ${orderID}`,
     );
   }
 }
