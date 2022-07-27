@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { CommandContract } from 'src/core/command-handler/contract';
+import {
+  CommandSubscriptionContract,
+  CommandValidationContract,
+} from 'src/core/command/contract';
 import { Command, SubscriberListener, ValidateListener } from './types';
 
 export const CommandServiceSymbol = Symbol('CommandService');
@@ -7,9 +10,9 @@ export const CommandServiceSymbol = Symbol('CommandService');
 @Injectable()
 export class CommandService {
   private readonly commandRegistry: Map<symbol, Command<any>>;
-  public registerValidatorToCommand<T extends keyof CommandContract>(
+  public registerValidatorToCommand<T extends keyof CommandValidationContract>(
     command: T,
-    validator: ValidateListener<CommandContract[T]>,
+    validator: ValidateListener<CommandValidationContract[T]>,
   ): void {
     let commandInstance = this.commandRegistry.get(command);
     if (!commandInstance) {
@@ -25,9 +28,9 @@ export class CommandService {
     }
   }
 
-  public async runCommandValidation<T extends keyof CommandContract>(
+  public async runCommandValidation<T extends keyof CommandValidationContract>(
     command: T,
-    payload: CommandContract[T],
+    payload: CommandValidationContract[T],
   ): Promise<Error[] | null> {
     const commandInstance = this.commandRegistry.get(command);
     if (!commandInstance) {
@@ -56,9 +59,11 @@ export class CommandService {
     return null;
   }
 
-  public registerSubscriberToCommand<T extends keyof CommandContract>(
+  public registerSubscriberToCommand<
+    T extends keyof CommandSubscriptionContract,
+  >(
     command: T,
-    subscriber: SubscriberListener<CommandContract[T]>,
+    subscriber: SubscriberListener<CommandSubscriptionContract[T]>,
   ): () => void {
     let commandInstance = this.commandRegistry.get(command);
     if (!commandInstance) {
@@ -80,8 +85,8 @@ export class CommandService {
   }
 
   public async triggerEventsToCommandSubscribers<
-    T extends keyof CommandContract,
-  >(command: T, payload: CommandContract[T]): Promise<void> {
+    T extends keyof CommandSubscriptionContract,
+  >(command: T, payload: CommandSubscriptionContract[T]): Promise<void> {
     const commandInstance = this.commandRegistry.get(command);
     if (!commandInstance) {
       return null;
