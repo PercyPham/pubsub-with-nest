@@ -1,4 +1,8 @@
 import { Module } from '@nestjs/common';
+import {
+  CommandService,
+  CommandServiceSymbol,
+} from 'src/core/command/command.service';
 import { PubSubModule } from 'src/core/pubsub/pubsub.module';
 import {
   OrderCreatedEventPublisher,
@@ -14,6 +18,10 @@ import { ServiceAService, ServiceAServiceSymbol } from './service-a.service';
     {
       provide: OrderCreatedEventPublisherSymbol,
       useClass: OrderCreatedEventPublisher,
+    },
+    {
+      provide: CommandServiceSymbol,
+      useClass: CommandService,
     },
     {
       provide: ServiceAServiceSymbol,

@@ -5,11 +5,14 @@ import {
 } from 'src/core/command/contract';
 import { Command, SubscriberListener, ValidateListener } from './types';
 
-export const CommandServiceSymbol = Symbol('CommandService');
+export const CommandServiceSymbol = Symbol('CommandServiceSymbol');
 
 @Injectable()
 export class CommandService {
   private readonly commandRegistry: Map<symbol, Command<any>>;
+  constructor() {
+    this.commandRegistry = new Map();
+  }
   public registerValidatorToCommand<T extends keyof CommandValidationContract>(
     command: T,
     validator: ValidateListener<CommandValidationContract[T]>,

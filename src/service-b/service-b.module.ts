@@ -1,4 +1,8 @@
 import { Module } from '@nestjs/common';
+import {
+  CommandService,
+  CommandServiceSymbol,
+} from 'src/core/command/command.service';
 import { ServiceAContractModule } from 'src/service-a-contract/service-a-contract.module';
 import {
   ServiceBEventHandler,
@@ -11,6 +15,10 @@ import {
     {
       provide: ServiceBEventHandlerSymbol,
       useClass: ServiceBEventHandler,
+    },
+    {
+      provide: CommandServiceSymbol,
+      useClass: CommandService,
     },
   ],
 })

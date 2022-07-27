@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import {
   CommandService,
   CommandServiceSymbol,
-} from 'src/core/command-handler/command.service';
+} from 'src/core/command/command.service';
 import { OrderCreatedCommand } from 'src/service-a-contract/order-created.command';
 import { OrderCreatedEventData } from 'src/service-a-contract/order-created.topic';
 import {
