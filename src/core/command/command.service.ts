@@ -9,33 +9,30 @@ export const CommandServiceSymbol = Symbol('CommandServiceSymbol');
 
 @Injectable()
 export class CommandService {
-  private readonly commandRegistry: Map<symbol, Command<any>>;
-  constructor() {
-    this.commandRegistry = new Map();
-  }
+  private static readonly commandRegistry: Map<symbol, Command<any>> =
+    new Map();
+
   public registerValidatorToCommand<T extends keyof CommandValidationContract>(
     command: T,
     validator: ValidateListener<CommandValidationContract[T]>,
   ): void {
-    let commandInstance = this.commandRegistry.get(command);
+    let commandInstance = CommandService.commandRegistry.get(command);
     if (!commandInstance) {
       commandInstance = {
         command,
         validateListeners: [],
         subscriberListeners: [],
       };
-      this.commandRegistry.set(command, commandInstance);
+      CommandService.commandRegistry.set(command, commandInstance);
     }
-    if (commandInstance) {
-      commandInstance.validateListeners.push(validator);
-    }
+    commandInstance.validateListeners.push(validator);
   }
 
   public async runCommandValidation<T extends keyof CommandValidationContract>(
     command: T,
     payload: CommandValidationContract[T],
   ): Promise<Error[] | null> {
-    const commandInstance = this.commandRegistry.get(command);
+    const commandInstance = CommandService.commandRegistry.get(command);
     if (!commandInstance) {
       return null;
     }
@@ -68,21 +65,22 @@ export class CommandService {
     command: T,
     subscriber: SubscriberListener<CommandSubscriptionContract[T]>,
   ): () => void {
-    let commandInstance = this.commandRegistry.get(command);
+    let commandInstance = CommandService.commandRegistry.get(command);
     if (!commandInstance) {
       commandInstance = {
         command,
         validateListeners: [],
         subscriberListeners: [],
       };
-      this.commandRegistry.set(command, commandInstance);
+      CommandService.commandRegistry.set(command, commandInstance);
     }
     if (commandInstance) {
       commandInstance.subscriberListeners.push(subscriber);
     }
 
     return () => {
-      const handlers = this.commandRegistry.get(command).subscriberListeners;
+      const handlers =
+        CommandService.commandRegistry.get(command).subscriberListeners;
       handlers.splice(handlers.indexOf(subscriber), 1);
     };
   }
@@ -90,7 +88,7 @@ export class CommandService {
   public async triggerEventsToCommandSubscribers<
     T extends keyof CommandSubscriptionContract,
   >(command: T, payload: CommandSubscriptionContract[T]): Promise<void> {
-    const commandInstance = this.commandRegistry.get(command);
+    const commandInstance = CommandService.commandRegistry.get(command);
     if (!commandInstance) {
       return null;
     }

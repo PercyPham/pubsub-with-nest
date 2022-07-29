@@ -22,6 +22,7 @@ export class ServiceBEventHandler {
     private readonly commandService: CommandService,
   ) {
     this.orderCreatedTopic.registerSubscriber(this.logEvent);
+
     this.commandService.registerSubscriberToCommand(
       OrderCreatedCommand,
       async (payload) => {

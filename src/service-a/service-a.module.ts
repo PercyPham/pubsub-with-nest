@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { CommandModule } from 'src/core/command/command.module';
 import {
   CommandService,
   CommandServiceSymbol,
@@ -12,7 +13,7 @@ import { ServiceAController } from './service-a.controller';
 import { ServiceAService, ServiceAServiceSymbol } from './service-a.service';
 
 @Module({
-  imports: [PubSubModule],
+  imports: [PubSubModule, CommandModule],
   controllers: [ServiceAController],
   providers: [
     {
