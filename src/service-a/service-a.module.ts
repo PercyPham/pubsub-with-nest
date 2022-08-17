@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { CmdRepModule } from 'src/core/cmdrep/cmdrep.module';
 import { CommandModule } from 'src/core/command/command.module';
 import {
   CommandService,
@@ -13,7 +14,7 @@ import { ServiceAController } from './service-a.controller';
 import { ServiceAService, ServiceAServiceSymbol } from './service-a.service';
 
 @Module({
-  imports: [PubSubModule, CommandModule],
+  imports: [PubSubModule, CmdRepModule, CommandModule],
   controllers: [ServiceAController],
   providers: [
     {
