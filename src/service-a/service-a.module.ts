@@ -6,10 +6,6 @@ import {
   CommandServiceSymbol,
 } from 'src/core/command/command.service';
 import { PubSubModule } from 'src/core/pubsub/pubsub.module';
-import {
-  OrderCreatedEventPublisher,
-  OrderCreatedEventPublisherSymbol,
-} from './order-created.event-publisher';
 import { ServiceAController } from './service-a.controller';
 import { ServiceAService, ServiceAServiceSymbol } from './service-a.service';
 
@@ -17,10 +13,6 @@ import { ServiceAService, ServiceAServiceSymbol } from './service-a.service';
   imports: [PubSubModule, CmdRepModule, CommandModule],
   controllers: [ServiceAController],
   providers: [
-    {
-      provide: OrderCreatedEventPublisherSymbol,
-      useClass: OrderCreatedEventPublisher,
-    },
     {
       provide: CommandServiceSymbol,
       useClass: CommandService,

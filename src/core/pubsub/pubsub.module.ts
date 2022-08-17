@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
-import { PubSubService, PubSubServiceSymbol } from './pubsub.service';
+import { PubSubServiceImpl, PubSubServiceSymbol } from './pubsub.service';
 
 @Module({
   providers: [
     {
       provide: PubSubServiceSymbol,
-      useClass: PubSubService,
+      useClass: PubSubServiceImpl,
     },
   ],
   exports: [PubSubServiceSymbol],

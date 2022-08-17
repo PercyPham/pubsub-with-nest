@@ -7,21 +7,21 @@ import {
   CommandService,
   CommandServiceSymbol,
 } from 'src/core/command/command.service';
-import { OrderCreatedCommand } from 'src/service-a-contract/order-created.command';
-import { OrderCreatedEventData } from 'src/service-a-contract/order-created.topic';
-import { TestCmd } from 'src/service-b-contract/service-b.contract';
 import {
-  OrderCreatedEventPublisher,
-  OrderCreatedEventPublisherSymbol,
-} from './order-created.event-publisher';
+  PubSubService,
+  PubSubServiceSymbol,
+} from 'src/core/pubsub/pubsub.service';
+import { OrderCreatedCommand } from 'src/service-a-contract/order-created.command';
+import { OrderCreated } from 'src/service-a-contract/order-created.event';
+import { TestCmd } from 'src/service-b-contract/service-b.contract';
 
 export const ServiceAServiceSymbol = Symbol('ServiceAService');
 
 @Injectable()
 export class ServiceAService {
   constructor(
-    @Inject(OrderCreatedEventPublisherSymbol)
-    private readonly orderCreatedEventPublisher: OrderCreatedEventPublisher,
+    @Inject(PubSubServiceSymbol)
+    private readonly pubsub: PubSubService,
     @Inject(CmdRepServiceSymbol)
     private readonly cmdrepService: CmdRepService,
     @Inject(CommandServiceSymbol)
@@ -29,14 +29,16 @@ export class ServiceAService {
   ) {}
 
   public async createOrderWithID(orderID: number): Promise<void> {
-    const eventData: OrderCreatedEventData = { orderID };
-    this.orderCreatedEventPublisher.publishEventWith(eventData);
+    // test pubsub
+    this.pubsub.publish({
+      topic: OrderCreated,
+      msg: { orderID },
+    });
 
     // publish command
-    this.commandService.triggerEventsToCommandSubscribers(
-      OrderCreatedCommand,
-      eventData,
-    );
+    this.commandService.triggerEventsToCommandSubscribers(OrderCreatedCommand, {
+      orderID,
+    });
 
     /// Test cmdrep service
     let [err, result] = await this.cmdrepService.sendCommand({

@@ -1,92 +1,47 @@
 import { Injectable } from '@nestjs/common';
-
-export type DomainEvent<Data> = {
-  topic: symbol;
-  data?: Data;
-};
-
-export type EventCreator<EventData> = {
-  create: (data: EventData) => DomainEvent<EventData>;
-};
-
-export class EventCreatorFactory {
-  static createForTopic<EventData>(topic: symbol): EventCreator<EventData> {
-    return {
-      create: (data: EventData) => ({ topic, data }),
-    };
-  }
-}
-
-export type EventHandler<E> = (e: E) => void;
-
-export type Unsubscribe = () => void;
-
-export abstract class EventTopic<Data> {
-  constructor(
-    private readonly topic: symbol,
-    private readonly psService: PubSubService,
-  ) {}
-
-  registerSubscriber(
-    eventHandler: EventHandler<DomainEvent<Data>>,
-  ): Unsubscribe {
-    return this.psService.subscribe(this.topic, eventHandler);
-  }
-}
-
-export abstract class EventPublisher<EventData> {
-  private readonly eventCreator: EventCreator<EventData>;
-  constructor(
-    private readonly topic: symbol,
-    private readonly psService: PubSubService,
-  ) {
-    this.eventCreator = EventCreatorFactory.createForTopic(this.topic);
-  }
-
-  public createEvent(data: EventData): DomainEvent<EventData> {
-    return this.eventCreator.create(data);
-  }
-
-  public publish(event: DomainEvent<EventData>): void {
-    return this.psService.publish<EventData>(event);
-  }
-
-  public publishEventWith(data: EventData): void {
-    return this.psService.publish(this.createEvent(data));
-  }
-}
+import { EventHandler, EventMsgContract } from './contract';
+import { Event } from './contract';
 
 export const PubSubServiceSymbol = Symbol('PubSubService');
 
+export interface PubSubService {
+  subscribe<T extends keyof EventMsgContract>(
+    topic: T,
+    handler: EventHandler<T>,
+  ): Promise<Unsubscribe>;
+
+  publish<T extends keyof EventMsgContract>(event: Event<T>): Promise<void>;
+}
+
+export type Unsubscribe = () => Promise<void>;
+
 @Injectable()
-export class PubSubService {
-  private readonly pubsub: Map<symbol, EventHandler<DomainEvent<any>>[]>;
+export class PubSubServiceImpl implements PubSubService {
+  private readonly registry = new Map<
+    symbol,
+    EventHandler<keyof EventMsgContract>[]
+  >();
 
-  constructor() {
-    this.pubsub = new Map();
-  }
-
-  public subscribe<Data>(
-    topic: symbol,
-    handler: EventHandler<DomainEvent<Data>>,
-  ): Unsubscribe {
-    if (!this.pubsub.get(topic)) {
-      this.pubsub.set(topic, []);
+  public async subscribe<T extends keyof EventMsgContract>(
+    topic: T,
+    handler: EventHandler<T>,
+  ): Promise<Unsubscribe> {
+    if (!this.registry.get(topic)) {
+      this.registry.set(topic, []);
     }
-    this.pubsub.get(topic).push(handler);
-    return () => {
-      const handlers = this.pubsub.get(topic).filter((h) => h !== handler);
-      this.pubsub.set(topic, handlers);
+    this.registry.get(topic).push(handler);
+    const unsubscribe = async () => {
+      const handlers = this.registry.get(topic).filter((h) => h !== handler);
+      this.registry.set(topic, handlers);
     };
+    return unsubscribe;
   }
 
-  public publish<Data>(event: DomainEvent<Data>): void {
-    const handlers = this.pubsub.get(event.topic);
-    if (!handlers || handlers.length === 0) {
-      return;
-    }
-    for (const handler of handlers) {
-      setTimeout(() => handler(event), 0);
-    }
+  public async publish<T extends keyof EventMsgContract>(
+    event: Event<T>,
+  ): Promise<void> {
+    const handlers = this.registry.get(event.topic);
+    if (!handlers || handlers.length === 0) return;
+    await Promise.all(handlers.map((handler) => handler(event)));
   }
 }
