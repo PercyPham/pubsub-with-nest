@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 import { CmdRepModule } from 'src/core/cmdrep/cmdrep.module';
-import { CommandModule } from 'src/core/command/command.module';
 import { PubSubModule } from 'src/core/pubsub/pubsub.module';
 import {
   ServiceBCommandHandler,
@@ -12,7 +11,7 @@ import {
 } from './service-b.event-handler';
 
 @Module({
-  imports: [PubSubModule, CommandModule, CmdRepModule],
+  imports: [PubSubModule, CmdRepModule],
   providers: [
     {
       provide: ServiceBCommandHandlerSymbol,

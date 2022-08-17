@@ -4,14 +4,9 @@ import {
   CmdRepServiceSymbol,
 } from 'src/core/cmdrep/cmdrep.service';
 import {
-  CommandService,
-  CommandServiceSymbol,
-} from 'src/core/command/command.service';
-import {
   PubSubService,
   PubSubServiceSymbol,
 } from 'src/core/pubsub/pubsub.service';
-import { OrderCreatedCommand } from 'src/service-a-contract/order-created.command';
 import { OrderCreated } from 'src/service-a-contract/order-created.event';
 import { TestCmd } from 'src/service-b-contract/service-b.contract';
 
@@ -24,8 +19,6 @@ export class ServiceAService {
     private readonly psService: PubSubService,
     @Inject(CmdRepServiceSymbol)
     private readonly cmdrepService: CmdRepService,
-    @Inject(CommandServiceSymbol)
-    private readonly commandService: CommandService,
   ) {}
 
   public async createOrderWithID(orderID: number): Promise<void> {
@@ -33,11 +26,6 @@ export class ServiceAService {
     this.psService.publish({
       topic: OrderCreated,
       msg: { orderID },
-    });
-
-    // publish command
-    this.commandService.triggerEventsToCommandSubscribers(OrderCreatedCommand, {
-      orderID,
     });
 
     /// Test cmdrep service
