@@ -1,8 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 import {
-  CmdRepService,
-  CmdRepServiceSymbol,
-} from 'src/core/cmdrep/cmdrep.service';
+  CommandService,
+  CommandServiceSymbol,
+} from 'src/core/command/command.service';
 import {
   PubSubService,
   PubSubServiceSymbol,
@@ -17,8 +17,8 @@ export class ServiceAService {
   constructor(
     @Inject(PubSubServiceSymbol)
     private readonly psService: PubSubService,
-    @Inject(CmdRepServiceSymbol)
-    private readonly cmdrepService: CmdRepService,
+    @Inject(CommandServiceSymbol)
+    private readonly cmdService: CommandService,
   ) {}
 
   public async createOrderWithID(orderID: number): Promise<void> {
@@ -28,19 +28,19 @@ export class ServiceAService {
       msg: { orderID },
     });
 
-    /// Test cmdrep service
-    let [err, reply] = await this.cmdrepService.sendCommand({
+    /// Test cmd service
+    let [err, reply] = await this.cmdService.sendCommand({
       type: TestCmd,
       msg: { shouldSuccess: true },
     });
-    console.log(`cmdrep:success:err:`, err?.message);
-    console.log(`cmdrep:success:reply:`, reply);
+    console.log(`cmd:success:err:`, err?.message);
+    console.log(`cmd:success:reply:`, reply);
 
-    [err, reply] = await this.cmdrepService.sendCommand({
+    [err, reply] = await this.cmdService.sendCommand({
       type: TestCmd,
       msg: { shouldSuccess: false },
     });
-    console.log(`cmdrep:failed:err:`, err?.message);
-    console.log(`cmdrep:failed:reply:`, reply);
+    console.log(`cmd:failed:err:`, err?.message);
+    console.log(`cmd:failed:reply:`, reply);
   }
 }

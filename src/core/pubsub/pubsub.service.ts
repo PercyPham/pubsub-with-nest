@@ -17,10 +17,7 @@ export type Unsubscribe = () => Promise<void>;
 
 @Injectable()
 export class PubSubServiceImpl implements PubSubService {
-  private readonly registry = new Map<
-    symbol,
-    EventHandler<keyof EventMsgContract>[]
-  >();
+  private readonly registry = new Map<symbol, EventHandler<any>[]>();
 
   public async subscribe<T extends keyof EventMsgContract>(
     topic: T,

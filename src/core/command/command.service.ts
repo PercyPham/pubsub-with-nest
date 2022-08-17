@@ -4,12 +4,12 @@ import {
   Command,
   CommandHandler,
   CommandReply,
-} from 'src/core/cmdrep/contract';
+} from 'src/core/command/contract';
 
-export const CmdRepServiceSymbol = Symbol('CmdRepService');
+export const CommandServiceSymbol = Symbol('CommandService');
 
 @Injectable()
-export class CmdRepService {
+export class CommandService {
   private readonly cmdHandlerMap = new Map<symbol, CommandHandler<any>>();
 
   public mapCommandWithHandler<T extends keyof CmdMsgContract>(

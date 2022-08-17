@@ -1,6 +1,12 @@
-/* eslint-disable @typescript-eslint/no-empty-interface */
-export interface CmdMsgContract {}
-export interface RepMsgContract {}
+const ExampleCommand = Symbol('ExampleCommand');
+
+export interface CmdMsgContract {
+  [ExampleCommand]: never;
+}
+
+export interface RepMsgContract {
+  [ExampleCommand]: never;
+}
 
 export type Command<T extends keyof CmdMsgContract> = {
   type: T;

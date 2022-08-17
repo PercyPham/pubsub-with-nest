@@ -27,8 +27,8 @@ Go back to terminal and see:
 
 ```txt
 > Log from Service B: receiving event from topic: Symbol(OrderCreated): with orderID: 15
-cmdrep:success:err: undefined
-cmdrep:success:reply: { message: 'ok' }
+cmd:success:err: undefined
+cmd:success:reply: { message: 'ok' }
 ```
 
 ## Instruction
@@ -99,14 +99,14 @@ export class ServiceBEventHandler {
 }
 ```
 
-### CmdRep usage
+### Command usage
 
 - Contract declaration (in `service-b-contract`):
 
 ```ts
 export const TestCmd = Symbol('TestCmd');
 
-declare module 'src/core/cmdrep/contract' {
+declare module 'src/core/command/contract' {
   interface CmdMsgContract {
     [TestCmd]: {
       shouldSuccess: boolean;
@@ -128,8 +128,8 @@ import { TestCmd } from '../service-b-contract';
 @Injectable()
 export class ServiceBCommandHandler {
   constructor(
-    @Inject(CmdRepServiceSymbol)
-    private readonly cmdRepService: CmdRepService,
+    @Inject(CommandServiceSymbol)
+    private readonly cmdRepService: CommandService,
   ) {
     this.cmdRepService.mapCommandWithHandler(TestCmd, this.handleTestCmd);
   }
@@ -153,17 +153,17 @@ import { TestCmd } from '../service-b-contract';
 @Injectable()
 export class ServiceAService {
   constructor(
-    @Inject(CmdRepServiceSymbol)
-    private readonly cmdrepService: CmdRepService,
+    @Inject(CommandServiceSymbol)
+    private readonly cmdService: CommandService,
   ) {}
 
   public async sendTestCmd(): Promise<void> {
-    const [err, reply] = await this.cmdrepService.sendCommand({
+    const [err, reply] = await this.cmdService.sendCommand({
       type: TestCmd,
       msg: { shouldSuccess: true },
     });
-    console.log(`cmdrep:success:err:`, err?.message);
-    console.log(`cmdrep:success:reply:`, reply);
+    console.log(`cmd:success:err:`, err?.message);
+    console.log(`cmd:success:reply:`, reply);
   }
 }
 ```

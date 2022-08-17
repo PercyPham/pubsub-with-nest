@@ -1,9 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
 import {
-  CmdRepService,
-  CmdRepServiceSymbol,
-} from 'src/core/cmdrep/cmdrep.service';
-import { Command, CommandReply } from 'src/core/cmdrep/contract';
+  CommandService,
+  CommandServiceSymbol,
+} from 'src/core/command/command.service';
+import { Command, CommandReply } from 'src/core/command/contract';
 import { TestCmd } from '../service-b-contract/service-b.contract';
 
 export const ServiceBCommandHandlerSymbol = Symbol('ServiceBCommandHandler');
@@ -11,10 +11,10 @@ export const ServiceBCommandHandlerSymbol = Symbol('ServiceBCommandHandler');
 @Injectable()
 export class ServiceBCommandHandler {
   constructor(
-    @Inject(CmdRepServiceSymbol)
-    private readonly cmdRepService: CmdRepService,
+    @Inject(CommandServiceSymbol)
+    private readonly cmdService: CommandService,
   ) {
-    this.cmdRepService.mapCommandWithHandler(TestCmd, this.handleTestCmd);
+    this.cmdService.mapCommandWithHandler(TestCmd, this.handleTestCmd);
   }
 
   async handleTestCmd(

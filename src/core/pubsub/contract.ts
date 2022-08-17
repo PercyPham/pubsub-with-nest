@@ -1,5 +1,8 @@
-/* eslint-disable @typescript-eslint/no-empty-interface */
-export interface EventMsgContract {}
+const ExampleTopic = Symbol('ExampleTopic');
+
+export interface EventMsgContract {
+  [ExampleTopic]: never;
+}
 
 export type Event<T extends keyof EventMsgContract> = {
   topic: T;
