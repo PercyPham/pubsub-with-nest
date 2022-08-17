@@ -21,7 +21,7 @@ export const ServiceAServiceSymbol = Symbol('ServiceAService');
 export class ServiceAService {
   constructor(
     @Inject(PubSubServiceSymbol)
-    private readonly pubsub: PubSubService,
+    private readonly psService: PubSubService,
     @Inject(CmdRepServiceSymbol)
     private readonly cmdrepService: CmdRepService,
     @Inject(CommandServiceSymbol)
@@ -30,7 +30,7 @@ export class ServiceAService {
 
   public async createOrderWithID(orderID: number): Promise<void> {
     // test pubsub
-    this.pubsub.publish({
+    this.psService.publish({
       topic: OrderCreated,
       msg: { orderID },
     });
@@ -41,18 +41,18 @@ export class ServiceAService {
     });
 
     /// Test cmdrep service
-    let [err, result] = await this.cmdrepService.sendCommand({
+    let [err, reply] = await this.cmdrepService.sendCommand({
       type: TestCmd,
       msg: { shouldSuccess: true },
     });
     console.log(`cmdrep:success:err:`, err?.message);
-    console.log(`cmdrep:success:result:`, result);
+    console.log(`cmdrep:success:reply:`, reply);
 
-    [err, result] = await this.cmdrepService.sendCommand({
+    [err, reply] = await this.cmdrepService.sendCommand({
       type: TestCmd,
       msg: { shouldSuccess: false },
     });
     console.log(`cmdrep:failed:err:`, err?.message);
-    console.log(`cmdrep:failed:result:`, result);
+    console.log(`cmdrep:failed:reply:`, reply);
   }
 }

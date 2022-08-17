@@ -27,80 +27,143 @@ Go back to terminal and see:
 
 ```txt
 > Log from Service B: receiving event from topic: Symbol(OrderCreated): with orderID: 15
+cmdrep:success:err: undefined
+cmdrep:success:reply: { message: 'ok' }
 ```
 
 ## Instruction
 
-### For contract declaration (in `service-a-contract`)
+### PubSub usage
+
+- Contract declaration (in `service-a-contract`):
 
 ```ts
-export const OrderCreatedTopic = Symbol('OrderCreated');
+export const OrderCreated = Symbol('OrderCreated');
 
-export type OrderCreatedEventData = { orderID: number };
-export type OrderCreatedEvent = DomainEvent<OrderCreatedEventData>;
-
-@Injectable()
-export class OrderCreatedTopicService extends EventTopic<OrderCreatedEventData> {
-  constructor(
-    @Inject(PubSubServiceSymbol)
-    psService: PubSubService,
-  ) {
-    super(OrderCreatedTopic, psService);
+declare module 'src/core/pubsub/contract' {
+  interface EventMsgContract {
+    [OrderCreated]: {
+      orderID: number;
+    };
   }
 }
 ```
 
-### For event publisher (in `service-a`)
-
-Publisher:
+- Event publisher (in `service-a`):
 
 ```ts
+import { OrderCreated } from '../service-a-contract';
+
 @Injectable()
-export class OrderCreatedEventPublisher extends EventPublisher<OrderCreatedEventData> {
+export class ServiceA {
   constructor(
     @Inject(PubSubServiceSymbol)
-    psService: PubSubService,
-  ) {
-    super(OrderCreatedTopic, psService);
-  }
-}
-```
-
-Publisher usage:
-
-```ts
-@Injectable()
-export class ServiceAService {
-  constructor(
-    @Inject(OrderCreatedEventPublisherSymbol)
-    private readonly orderCreatedEventPublisher: OrderCreatedEventPublisher,
+    private readonly psService: PubSubService,
   ) {}
 
-  public createOrderWithID(orderID: number): void {
-    const eventData: OrderCreatedEventData = { orderID };
-    this.orderCreatedEventPublisher.publishEventWith(eventData);
+  public async publishOrderCreatedEvent(orderID: number): Promise<void> {
+    // fire but don't wait for all handlers to complete handling event
+    this.psService.publish({
+      topic: OrderCreated,
+      msg: { orderID },
+    });
+
+    // fire and wait for handling completion
+    await this.psService.publish({
+      topic: OrderCreated,
+      msg: { orderID },
+    });
   }
 }
 ```
 
-### For event subscriber (in `service-b`)
+- Event handler (in `service-b`):
 
 ```ts
+import { OrderCreated } from 'src/service-a-contract';
+
 @Injectable()
 export class ServiceBEventHandler {
   constructor(
-    @Inject(OrderCreatedTopic)
-    private readonly orderCreatedTopic: OrderCreatedTopicService,
+    @Inject(PubSubServiceSymbol)
+    private readonly pubsub: PubSubService,
   ) {
-    this.orderCreatedTopic.registerSubscriber(this.logEvent);
+    this.pubsub.subscribe(OrderCreated, this.logEvent);
   }
 
-  logEvent(event: OrderCreatedEvent) {
+  async logEvent(event: Event<typeof OrderCreated>): Promise<void> {
     const topic = event.topic.toString();
-    const orderID = event.data?.orderID;
-    console.log(
-      `> Log from Service B: receiving event from topic: ${topic}: with orderID: ${orderID}`,
-    );
+    const orderID = event.msg.orderID;
+    console.log(`> Log from Service B: receiving event from topic: ${topic}: with orderID: ${orderID}`);
+  }
+}
+```
+
+### CmdRep usage
+
+- Contract declaration (in `service-b-contract`):
+
+```ts
+export const TestCmd = Symbol('TestCmd');
+
+declare module 'src/core/cmdrep/contract' {
+  interface CmdMsgContract {
+    [TestCmd]: {
+      shouldSuccess: boolean;
+    };
+  }
+  interface RepMsgContract {
+    [TestCmd]: {
+      message: string;
+    };
+  }
+}
+```
+
+- Command handler (in `service-b`):
+
+```ts
+import { TestCmd } from '../service-b-contract';
+
+@Injectable()
+export class ServiceBCommandHandler {
+  constructor(
+    @Inject(CmdRepServiceSymbol)
+    private readonly cmdRepService: CmdRepService,
+  ) {
+    this.cmdRepService.mapCommandWithHandler(TestCmd, this.handleTestCmd);
+  }
+
+  async handleTestCmd(
+    cmd: Command<typeof TestCmd>,
+  ): Promise<CommandReply<typeof TestCmd>> {
+    if (cmd.msg.shouldSuccess) {
+      return [null, { message: 'ok' }];
+    }
+    return [new Error('failed'), undefined];
+  }
+}
+```
+
+- Command sender (in `service-a`):
+
+```ts
+import { TestCmd } from '../service-b-contract';
+
+@Injectable()
+export class ServiceAService {
+  constructor(
+    @Inject(CmdRepServiceSymbol)
+    private readonly cmdrepService: CmdRepService,
+  ) {}
+
+  public async sendTestCmd(): Promise<void> {
+    const [err, reply] = await this.cmdrepService.sendCommand({
+      type: TestCmd,
+      msg: { shouldSuccess: true },
+    });
+    console.log(`cmdrep:success:err:`, err?.message);
+    console.log(`cmdrep:success:reply:`, reply);
   }
 }
 ```
