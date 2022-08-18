@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
-import { CommandService, CommandServiceSymbol } from './command.service';
+import { CommandServiceImpl, CommandServiceSymbol } from './command.service';
 
 @Module({
   providers: [
     {
       provide: CommandServiceSymbol,
-      useClass: CommandService,
+      useClass: CommandServiceImpl,
     },
   ],
   exports: [CommandServiceSymbol],

@@ -3,7 +3,7 @@ import {
   CommandService,
   CommandServiceSymbol,
 } from 'src/core/command/command.service';
-import { Command, CommandReply } from 'src/core/command';
+import { CmdMsgContract, RepMsgContract } from 'src/core/command';
 import { TestCmd } from '../service-b-contract';
 
 export const ServiceBCommandHandlerSymbol = Symbol('ServiceBCommandHandler');
@@ -18,11 +18,11 @@ export class ServiceBCommandHandler {
   }
 
   async handleTestCmd(
-    cmd: Command<typeof TestCmd>,
-  ): Promise<CommandReply<typeof TestCmd>> {
-    if (cmd.msg.shouldSuccess) {
-      return [null, { message: 'ok' }];
+    cmdMsg: CmdMsgContract[typeof TestCmd],
+  ): Promise<RepMsgContract[typeof TestCmd]> {
+    if (cmdMsg.shouldSuccess) {
+      return { message: 'ok' };
     }
-    return [new Error('failed'), undefined];
+    throw new Error('failed');
   }
 }

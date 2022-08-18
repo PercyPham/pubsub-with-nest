@@ -23,18 +23,17 @@ export class ServiceAService {
     });
 
     /// Test cmd service
-    let [err, reply] = await this.cmdService.sendCommand({
-      type: TestCmd,
-      msg: { shouldSuccess: true },
+    let reply = await this.cmdService.sendCommand(TestCmd, {
+      shouldSuccess: true,
     });
-    console.log(`cmd:success:err:`, err?.message);
-    console.log(`cmd:success:reply:`, reply);
+    console.log(`cmd:success:reply:message`, reply.message);
 
-    [err, reply] = await this.cmdService.sendCommand({
-      type: TestCmd,
-      msg: { shouldSuccess: false },
-    });
-    console.log(`cmd:failed:err:`, err?.message);
-    console.log(`cmd:failed:reply:`, reply);
+    try {
+      reply = await this.cmdService.sendCommand(TestCmd, {
+        shouldSuccess: false,
+      });
+    } catch (err) {
+      console.log(`cmd:failed:err:message`, err.message);
+    }
   }
 }

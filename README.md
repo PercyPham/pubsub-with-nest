@@ -106,7 +106,7 @@ export class ServiceBEventHandler {
 ```ts
 export const TestCmd = Symbol('TestCmd');
 
-declare module 'src/core/command/contract' {
+declare module 'src/core/command' {
   interface CmdMsgContract {
     [TestCmd]: {
       shouldSuccess: boolean;
@@ -135,12 +135,12 @@ export class ServiceBCommandHandler {
   }
 
   async handleTestCmd(
-    cmd: Command<typeof TestCmd>,
-  ): Promise<CommandReply<typeof TestCmd>> {
-    if (cmd.msg.shouldSuccess) {
-      return [null, { message: 'ok' }];
+    cmdMsg: CmdMsgContract[typeof TestCmd],
+  ): Promise<RepMsgContract[typeof TestCmd]> {
+    if (cmdMsg.shouldSuccess) {
+      return { message: 'ok' };
     }
-    return [new Error('failed'), undefined];
+    throw new Error('failed');
   }
 }
 ```
@@ -158,12 +158,18 @@ export class ServiceAService {
   ) {}
 
   public async sendTestCmd(): Promise<void> {
-    const [err, reply] = await this.cmdService.sendCommand({
-      type: TestCmd,
-      msg: { shouldSuccess: true },
+    let reply = await this.cmdService.sendCommand(TestCmd, {
+      shouldSuccess: true,
     });
-    console.log(`cmd:success:err:`, err?.message);
-    console.log(`cmd:success:reply:`, reply);
+    console.log(`cmd:success:reply:message`, reply.message);
+
+    try {
+      reply = await this.cmdService.sendCommand(TestCmd, {
+        shouldSuccess: false,
+      });
+    } catch (err) {
+      console.log(`cmd:failed:err:message`, err.message);
+    }
   }
 }
 ```

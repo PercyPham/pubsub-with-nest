@@ -1,22 +1,13 @@
-const ExampleCommand = Symbol('ExampleCommand');
+const PlaceholderCommand = Symbol('PlaceholderCommand');
 
 export interface CmdMsgContract {
-  [ExampleCommand]: never;
+  [PlaceholderCommand]: never;
 }
 
 export interface RepMsgContract {
-  [ExampleCommand]: never;
+  [PlaceholderCommand]: never;
 }
 
-export type Command<T extends keyof CmdMsgContract> = {
-  type: T;
-  msg: CmdMsgContract[T];
-};
-
 export type CommandHandler<T extends keyof CmdMsgContract> = (
-  cmd: Command<T>,
-) => Promise<CommandReply<T>>;
-
-export type CommandReply<T extends keyof CmdMsgContract> =
-  | [Error, undefined]
-  | [null, RepMsgContract[T]];
+  cmdMsg: CmdMsgContract[T],
+) => Promise<RepMsgContract[T]>;
