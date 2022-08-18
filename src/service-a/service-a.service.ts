@@ -17,7 +17,7 @@ export class ServiceAService {
 
   public async createOrderWithID(orderID: number): Promise<void> {
     // test pubsub
-    this.psService.publish({
+    await this.psService.publish({
       topic: OrderCreated,
       msg: { orderID },
     });

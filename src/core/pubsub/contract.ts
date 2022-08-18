@@ -1,7 +1,7 @@
-const ExampleTopic = Symbol('ExampleTopic');
+const PlaceholderEvent = Symbol('PlaceholderEvent');
 
 export interface EventMsgContract {
-  [ExampleTopic]: never;
+  [PlaceholderEvent]: never;
 }
 
 export type Event<T extends keyof EventMsgContract> = {

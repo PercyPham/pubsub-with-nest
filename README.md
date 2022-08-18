@@ -26,9 +26,9 @@ OK
 Go back to terminal and see:
 
 ```txt
+cmd:success:reply:message ok
+cmd:failed:err:message failed
 > Log from Service B: receiving event from topic: Symbol(OrderCreated): with orderID: 15
-cmd:success:err: undefined
-cmd:success:reply: { message: 'ok' }
 ```
 
 ## Instruction
@@ -40,7 +40,7 @@ cmd:success:reply: { message: 'ok' }
 ```ts
 export const OrderCreated = Symbol('OrderCreated');
 
-declare module 'src/core/pubsub/contract' {
+declare module 'src/core/pubsub' {
   interface EventMsgContract {
     [OrderCreated]: {
       orderID: number;
@@ -62,13 +62,6 @@ export class ServiceA {
   ) {}
 
   public async publishOrderCreatedEvent(orderID: number): Promise<void> {
-    // fire but don't wait for all handlers to complete handling event
-    this.psService.publish({
-      topic: OrderCreated,
-      msg: { orderID },
-    });
-
-    // fire and wait for handling completion
     await this.psService.publish({
       topic: OrderCreated,
       msg: { orderID },

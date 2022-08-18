@@ -39,6 +39,8 @@ export class PubSubServiceImpl implements PubSubService {
   ): Promise<void> {
     const handlers = this.registry.get(event.topic);
     if (!handlers || handlers.length === 0) return;
-    await Promise.all(handlers.map((handler) => handler(event)));
+    for (const handler of handlers) {
+      setTimeout(() => handler(event), 0);
+    }
   }
 }
