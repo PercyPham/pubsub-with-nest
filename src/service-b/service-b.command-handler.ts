@@ -3,8 +3,8 @@ import {
   CommandService,
   CommandServiceSymbol,
 } from 'src/core/command/command.service';
-import { Command, CommandReply } from 'src/core/command/contract';
-import { TestCmd } from '../service-b-contract/service-b.contract';
+import { Command, CommandReply } from 'src/core/command';
+import { TestCmd } from '../service-b-contract';
 
 export const ServiceBCommandHandlerSymbol = Symbol('ServiceBCommandHandler');
 

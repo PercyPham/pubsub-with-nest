@@ -1,14 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
-import {
-  CommandService,
-  CommandServiceSymbol,
-} from 'src/core/command/command.service';
-import {
-  PubSubService,
-  PubSubServiceSymbol,
-} from 'src/core/pubsub/pubsub.service';
-import { OrderCreated } from 'src/service-a-contract/order-created.event';
-import { TestCmd } from 'src/service-b-contract/service-b.contract';
+import { CommandService, CommandServiceSymbol } from 'src/core/command';
+import { PubSubService, PubSubServiceSymbol } from 'src/core/pubsub';
+import { OrderCreated } from 'src/service-a-contract';
+import { TestCmd } from 'src/service-b-contract';
 
 export const ServiceAServiceSymbol = Symbol('ServiceAService');
 

@@ -1,11 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Event } from 'src/core/pubsub/contract';
-import {
-  PubSubService,
-  PubSubServiceSymbol,
-} from 'src/core/pubsub/pubsub.service';
+import { PubSubService, PubSubServiceSymbol } from 'src/core/pubsub';
 
-import { OrderCreated } from 'src/service-a-contract/order-created.event';
+import { OrderCreated } from 'src/service-a-contract';
 
 export const ServiceBEventHandlerSymbol = Symbol('ServiceBEventHandler');
 @Injectable()

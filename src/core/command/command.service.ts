@@ -4,7 +4,7 @@ import {
   Command,
   CommandHandler,
   CommandReply,
-} from 'src/core/command/contract';
+} from 'src/core/command';
 
 export const CommandServiceSymbol = Symbol('CommandService');
 
