@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Context } from '../context';
 import { EventHandler, EventMsgContract } from './contract';
 import { Event } from './contract';
 
@@ -10,7 +11,10 @@ export interface PubSubService {
     handler: EventHandler<T>,
   ): Promise<Unsubscribe>;
 
-  publish<T extends keyof EventMsgContract>(event: Event<T>): Promise<void>;
+  publish<T extends keyof EventMsgContract>(
+    ctx: Context,
+    event: Event<T>,
+  ): Promise<void>;
 }
 
 export type Unsubscribe = () => Promise<void>;
@@ -35,6 +39,7 @@ export class PubSubServiceImpl implements PubSubService {
   }
 
   public async publish<T extends keyof EventMsgContract>(
+    ctx: Context,
     event: Event<T>,
   ): Promise<void> {
     const handlers = this.registry.get(event.topic);

@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { CmdMsgContract, CommandHandler } from 'src/core/command';
+import { Context } from '../context';
 import { RepMsgContract } from './contract';
 
 export const CommandServiceSymbol = Symbol('CommandService');
@@ -11,6 +12,7 @@ export interface CommandService {
   ): void;
 
   sendCommand<T extends keyof CmdMsgContract>(
+    ctx: Context,
     cmdType: T,
     cmdMsg: CmdMsgContract[T],
   ): Promise<RepMsgContract[T]>;
@@ -32,11 +34,12 @@ export class CommandServiceImpl implements CommandService {
   }
 
   public async sendCommand<T extends keyof CmdMsgContract>(
+    ctx: Context,
     cmdType: T,
     cmdMsg: CmdMsgContract[T],
   ): Promise<RepMsgContract[T]> {
     const handler = this.mustGetCommandHandler(cmdType);
-    return handler(cmdMsg);
+    return handler(ctx, cmdMsg);
   }
 
   private mustGetCommandHandler<T extends keyof CmdMsgContract>(

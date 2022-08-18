@@ -1,3 +1,5 @@
+import { Context } from '../context';
+
 const PlaceholderCommand = Symbol('PlaceholderCommand');
 
 export interface CmdMsgContract {
@@ -9,5 +11,6 @@ export interface RepMsgContract {
 }
 
 export type CommandHandler<T extends keyof CmdMsgContract> = (
+  ctx: Context,
   cmdMsg: CmdMsgContract[T],
 ) => Promise<RepMsgContract[T]>;

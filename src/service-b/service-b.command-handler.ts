@@ -5,6 +5,7 @@ import {
 } from 'src/core/command/command.service';
 import { CmdMsgContract, RepMsgContract } from 'src/core/command';
 import { TestCmd } from '../service-b-contract';
+import { Context } from 'src/core/context';
 
 export const ServiceBCommandHandlerSymbol = Symbol('ServiceBCommandHandler');
 
@@ -18,6 +19,7 @@ export class ServiceBCommandHandler {
   }
 
   async handleTestCmd(
+    ctx: Context,
     cmdMsg: CmdMsgContract[typeof TestCmd],
   ): Promise<RepMsgContract[typeof TestCmd]> {
     if (cmdMsg.shouldSuccess) {
