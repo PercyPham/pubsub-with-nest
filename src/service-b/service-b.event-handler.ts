@@ -15,11 +15,15 @@ export class ServiceBEventHandler {
     this.pubsub.subscribe(OrderCreated, this.logEvent);
   }
 
-  async logEvent(_: Context, event: Event<typeof OrderCreated>): Promise<void> {
+  async logEvent(
+    ctx: Context,
+    event: Event<typeof OrderCreated>,
+  ): Promise<void> {
+    const timestamp = ctx.getTimestamp();
     const topic = event.topic.toString();
     const orderID = event.msg.orderID;
     console.log(
-      `> Log from Service B: receiving event from topic: ${topic}: with orderID: ${orderID}`,
+      `> Log from Service B: receiving event from topic: ${topic}: with orderID: ${orderID}: at: ${timestamp}`,
     );
   }
 }

@@ -26,9 +26,9 @@ OK
 Go back to terminal and see:
 
 ```txt
-cmd:success:reply:message ok
-cmd:failed:err:message failed
-> Log from Service B: receiving event from topic: Symbol(OrderCreated): with orderID: 15
+cmd:success:reply:message 1660880916635: ok
+cmd:failed:err:message 1660880916635: failed
+> Log from Service B: receiving event from topic: Symbol(OrderCreated): with orderID: 15: at: 1660880916635
 ```
 
 ## Instruction
@@ -61,8 +61,8 @@ export class ServiceA {
     private readonly psService: PubSubService,
   ) {}
 
-  public async publishOrderCreatedEvent(orderID: number): Promise<void> {
-    await this.psService.publish({
+  public async publishOrderCreatedEvent(ctx: Context, orderID: number): Promise<void> {
+    await this.psService.publish(ctx, {
       topic: OrderCreated,
       msg: { orderID },
     });
@@ -84,10 +84,10 @@ export class ServiceBEventHandler {
     this.pubsub.subscribe(OrderCreated, this.logEvent);
   }
 
-  async logEvent(event: Event<typeof OrderCreated>): Promise<void> {
+  async logEvent(ctx: Context, event: Event<typeof OrderCreated>): Promise<void> {
     const topic = event.topic.toString();
     const orderID = event.msg.orderID;
-    console.log(`> Log from Service B: receiving event from topic: ${topic}: with orderID: ${orderID}`);
+    console.log(`> Log from Service B: receiving event from topic: ${topic}: with orderID: ${orderID}: at: ${ctx.getTimestamp()}`);
   }
 }
 ```
@@ -128,12 +128,13 @@ export class ServiceBCommandHandler {
   }
 
   async handleTestCmd(
+    ctx: Context,
     cmdMsg: CmdMsgContract[typeof TestCmd],
   ): Promise<RepMsgContract[typeof TestCmd]> {
     if (cmdMsg.shouldSuccess) {
-      return { message: 'ok' };
+      return { message: `${ctx:getTimestamp()}: ok` };
     }
-    throw new Error('failed');
+    throw new Error(`${ctx:getTimestamp()}: failed`);
   }
 }
 ```
@@ -150,14 +151,14 @@ export class ServiceAService {
     private readonly cmdService: CommandService,
   ) {}
 
-  public async sendTestCmd(): Promise<void> {
-    let reply = await this.cmdService.sendCommand(TestCmd, {
+  public async sendTestCmd(ctx: Context): Promise<void> {
+    let reply = await this.cmdService.sendCommand(ctx, TestCmd, {
       shouldSuccess: true,
     });
     console.log(`cmd:success:reply:message`, reply.message);
 
     try {
-      reply = await this.cmdService.sendCommand(TestCmd, {
+      reply = await this.cmdService.sendCommand(ctx, TestCmd, {
         shouldSuccess: false,
       });
     } catch (err) {

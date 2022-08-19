@@ -23,8 +23,8 @@ export class ServiceBCommandHandler {
     cmdMsg: CmdMsgContract[typeof TestCmd],
   ): Promise<RepMsgContract[typeof TestCmd]> {
     if (cmdMsg.shouldSuccess) {
-      return { message: 'ok' };
+      return { message: `${ctx.getTimestamp()}: ok` };
     }
-    throw new Error('failed');
+    throw new Error(`${ctx.getTimestamp()}: failed`);
   }
 }

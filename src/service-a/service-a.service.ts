@@ -16,18 +16,7 @@ export class ServiceAService {
     private readonly cmdService: CommandService,
   ) {}
 
-  public async createOrderWithID(orderID: number): Promise<void> {
-    const ctx = new Context({
-      dbReadConn: null,
-      dbWriteConn: null,
-    });
-
-    // test pubsub
-    await this.psService.publish(ctx, {
-      topic: OrderCreated,
-      msg: { orderID },
-    });
-
+  public async createOrderWithID(ctx: Context, orderID: number): Promise<void> {
     /// Test cmd service
     let reply = await this.cmdService.sendCommand(ctx, TestCmd, {
       shouldSuccess: true,
@@ -41,5 +30,11 @@ export class ServiceAService {
     } catch (err) {
       console.log(`cmd:failed:err:message`, err.message);
     }
+
+    // test pubsub
+    await this.psService.publish(ctx, {
+      topic: OrderCreated,
+      msg: { orderID },
+    });
   }
 }

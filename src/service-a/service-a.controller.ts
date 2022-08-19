@@ -1,4 +1,5 @@
 import { Controller, Get, Inject } from '@nestjs/common';
+import { Context } from 'src/core/context';
 import { ServiceAService, ServiceAServiceSymbol } from './service-a.service';
 
 @Controller('service-a')
@@ -10,7 +11,11 @@ export class ServiceAController {
 
   @Get()
   publishMessage() {
-    this.serviceA.createOrderWithID(15);
+    const ctx = new Context({
+      dbReadConn: null,
+      dbWriteConn: null,
+    });
+    this.serviceA.createOrderWithID(ctx, 15);
     return 'OK';
   }
 }
