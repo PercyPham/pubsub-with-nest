@@ -24,7 +24,7 @@ export class Context {
     this.timestamp = cfg.timestamp ? cfg.timestamp : Date.now();
   }
 
-  public async withTransaction(): Promise<[Context, TransactionHandler]> {
+  public withTransaction(): [Context, TransactionFinisher] {
     const ctx = new Context({
       timestamp: this.timestamp,
       dbReadConn: this.dbReadConn,
@@ -33,8 +33,8 @@ export class Context {
     ctx.isDbTrx = true;
     ctx.trxProvider = this.dbWriteConn.transactionProvider();
     ctx.hasTrxProviderCalled = false;
-    const trxHandler = this.genTrxHandler(ctx);
-    return [ctx, trxHandler];
+    const trxFinisher = this.genTrxFinisher(ctx);
+    return [ctx, trxFinisher];
   }
 
   public getTimestamp(): number {
@@ -50,10 +50,14 @@ export class Context {
   }
 
   public async getDbWriteConn(): Promise<Knex> {
-    return this.isDbTrx ? this.trxProvider() : this.dbWriteConn;
+    if (this.isDbTrx) {
+      this.hasTrxProviderCalled = true;
+      return this.trxProvider();
+    }
+    return this.dbWriteConn;
   }
 
-  private genTrxHandler(ctx: Context): TransactionHandler {
+  private genTrxFinisher(ctx: Context): TransactionFinisher {
     return {
       commit: async () => {
         if (ctx.hasTrxProviderCalled) {
@@ -71,7 +75,7 @@ export class Context {
   }
 }
 
-export interface TransactionHandler {
+export interface TransactionFinisher {
   commit(): Promise<void>;
   rollback(): Promise<void>;
 }

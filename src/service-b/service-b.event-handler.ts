@@ -3,6 +3,7 @@ import { Event } from 'src/core/pubsub/contract';
 import { PubSubService, PubSubServiceSymbol } from 'src/core/pubsub';
 
 import { OrderCreated } from 'src/service-a-contract';
+import { Context } from 'src/core/context';
 
 export const ServiceBEventHandlerSymbol = Symbol('ServiceBEventHandler');
 @Injectable()
@@ -14,7 +15,7 @@ export class ServiceBEventHandler {
     this.pubsub.subscribe(OrderCreated, this.logEvent);
   }
 
-  async logEvent(event: Event<typeof OrderCreated>): Promise<void> {
+  async logEvent(_: Context, event: Event<typeof OrderCreated>): Promise<void> {
     const topic = event.topic.toString();
     const orderID = event.msg.orderID;
     console.log(

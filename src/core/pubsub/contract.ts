@@ -1,3 +1,5 @@
+import { Context } from '../context';
+
 const PlaceholderEvent = Symbol('PlaceholderEvent');
 
 export interface EventMsgContract {
@@ -10,5 +12,6 @@ export type Event<T extends keyof EventMsgContract> = {
 };
 
 export type EventHandler<T extends keyof EventMsgContract> = (
+  ctx: Context,
   event: Event<T>,
 ) => Promise<void>;
