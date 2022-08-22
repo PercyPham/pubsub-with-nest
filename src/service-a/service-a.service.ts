@@ -17,7 +17,7 @@ export class ServiceAService {
   ) {}
 
   public async createOrderWithID(ctx: Context, orderID: number): Promise<void> {
-    /// Test cmd service
+    /// test cmd service
     let reply = await this.cmdService.sendCommand(ctx, TestCmd, {
       shouldSuccess: true,
     });
@@ -32,9 +32,8 @@ export class ServiceAService {
     }
 
     // test pubsub
-    await this.psService.publish(ctx, {
-      topic: OrderCreated,
-      msg: { orderID },
+    await this.psService.publish(ctx, OrderCreated, {
+      orderID,
     });
   }
 }

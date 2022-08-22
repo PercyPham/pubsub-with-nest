@@ -7,7 +7,7 @@ export class ServiceAController {
   constructor(
     @Inject(ServiceAServiceSymbol)
     private readonly serviceA: ServiceAService,
-  ) {}
+  ) { }
 
   @Get()
   publishMessage() {
@@ -18,4 +18,5 @@ export class ServiceAController {
     this.serviceA.createOrderWithID(ctx, 15);
     return 'OK';
   }
+
 }
