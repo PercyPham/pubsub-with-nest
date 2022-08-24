@@ -1,15 +1,14 @@
 import { Knex } from 'knex';
+import { Timestamp } from 'src/core/common/data.types';
 
 export type ContextConfig = {
-  timestamp?: number;
-
+  timestamp: Timestamp;
   dbReadConn: Knex;
   dbWriteConn: Knex;
 };
 
 export class Context {
-  private timestamp: number;
-
+  private timestamp: Timestamp;
   private dbReadConn: Knex;
   private dbWriteConn: Knex;
 
@@ -18,10 +17,9 @@ export class Context {
   private hasTrxProviderCalled: boolean;
 
   constructor(cfg: ContextConfig) {
+    this.timestamp = cfg.timestamp;
     this.dbReadConn = cfg.dbReadConn;
     this.dbWriteConn = cfg.dbWriteConn;
-
-    this.timestamp = cfg.timestamp ? cfg.timestamp : Date.now();
   }
 
   public withTransaction(): [Context, TransactionFinisher] {
@@ -35,26 +33,6 @@ export class Context {
     ctx.hasTrxProviderCalled = false;
     const trxFinisher = this.genTrxFinisher(ctx);
     return [ctx, trxFinisher];
-  }
-
-  public getTimestamp(): number {
-    return this.timestamp;
-  }
-
-  public isInDbTransaction(): boolean {
-    return this.isDbTrx;
-  }
-
-  public getDbReadConn(): Knex {
-    return this.dbReadConn;
-  }
-
-  public async getDbWriteConn(): Promise<Knex> {
-    if (this.isDbTrx) {
-      this.hasTrxProviderCalled = true;
-      return this.trxProvider();
-    }
-    return this.dbWriteConn;
   }
 
   private genTrxFinisher(ctx: Context): TransactionFinisher {
@@ -72,6 +50,26 @@ export class Context {
         }
       },
     };
+  }
+
+  public getTimestamp(): Timestamp {
+    return this.timestamp;
+  }
+
+  public isInDbTransaction(): boolean {
+    return this.isDbTrx;
+  }
+
+  public getDbReadConn(): Knex {
+    return this.dbReadConn;
+  }
+
+  public async getDbWriteConn(): Promise<Knex> {
+    if (this.isDbTrx) {
+      this.hasTrxProviderCalled = true;
+      return this.trxProvider();
+    }
+    return this.dbWriteConn;
   }
 }
 
