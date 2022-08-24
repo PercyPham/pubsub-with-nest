@@ -1,1 +1,1 @@
-export * from './service-b.contract';
+export * from './test-cmd.command';
