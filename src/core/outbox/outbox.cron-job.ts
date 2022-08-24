@@ -1,12 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Context, ContextService, ContextServiceSymbol } from '../context';
-import { OutboxRepoSymbol } from '../pubsub/outbox';
 import { Outbox, OutboxType } from './outbox';
 import {
   OutboxHandlerRegistry,
   OutboxHandlerRegistrySymbol,
 } from './outbox.handler-registry';
-import { OutboxRepo } from './outbox.repo';
+import { OutboxRepo, OutboxRepoSymbol } from './outbox.repo';
 
 export const OutboxCronJobSymbol = Symbol('OutboxCronJob');
 

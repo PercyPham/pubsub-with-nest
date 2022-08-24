@@ -1,12 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Context } from '../context';
-import { OutboxRepoSymbol } from '../pubsub/outbox';
 import { Outbox, OutboxHandler, OutboxType } from './outbox';
 import {
   OutboxHandlerRegistry,
   OutboxHandlerRegistrySymbol,
 } from './outbox.handler-registry';
-import { OutboxRepo } from './outbox.repo';
+import { OutboxRepo, OutboxRepoSymbol } from './outbox.repo';
 
 export const OutboxServiceSymbol = Symbol('OutboxService');
 
