@@ -26,23 +26,23 @@ OK
 Go back to terminal and see:
 
 ```txt
-cmd:success:reply:message 1660880916635: ok
-cmd:failed:err:message 1660880916635: failed
-> Log from Service B: receiving event from topic: Symbol(OrderCreated): with orderID: 15: at: 1660880916635
+cmd:success:reply:message 1661335871085: ok
+cmd:failed:err:message 1661335871085: failed
+> 1661335871085: Log from Service B: receiving domain-event: Symbol(OrderCreatedDomainEvent): with orderID: 15
 ```
 
 ## Instruction
 
-### PubSub usage
+### Domain Event PubSub usage
 
 - Contract declaration (in `service-a-contract`):
 
 ```ts
-export const OrderCreated = Symbol('OrderCreated');
+export const OrderCreatedDomainEvent = Symbol('OrderCreatedDomainEvent');
 
-declare module 'src/core/pubsub' {
-  interface EventMsgContract {
-    [OrderCreated]: {
+declare module 'src/core/domain-event' {
+  interface DomainEventContract {
+    [OrderCreatedDomainEvent]: {
       orderID: number;
     };
   }
@@ -52,19 +52,18 @@ declare module 'src/core/pubsub' {
 - Event publisher (in `service-a`):
 
 ```ts
-import { OrderCreated } from '../service-a-contract';
+import { OrderCreatedDomainEvent } from '../service-a-contract';
 
 @Injectable()
 export class ServiceA {
   constructor(
-    @Inject(PubSubServiceSymbol)
-    private readonly psService: PubSubService,
+    @Inject(DomainEventPubSubServiceSymbol)
+    private readonly domainEventPubSubService: DomainEventPubSubService,
   ) {}
 
   public async publishOrderCreatedEvent(ctx: Context, orderID: number): Promise<void> {
-    await this.psService.publish(ctx, {
-      topic: OrderCreated,
-      msg: { orderID },
+    await this.domainEventPubSubService.publish(ctx, OrderCreatedDomainEvent, {
+      orderID,
     });
   }
 }
@@ -73,21 +72,31 @@ export class ServiceA {
 - Event handler (in `service-b`):
 
 ```ts
-import { OrderCreated } from 'src/service-a-contract';
+import { OrderCreatedDomainEvent } from 'src/service-a-contract';
 
 @Injectable()
 export class ServiceBEventHandler {
   constructor(
-    @Inject(PubSubServiceSymbol)
-    private readonly pubsub: PubSubService,
+    @Inject(DomainEventPubSubServiceSymbol)
+    private readonly domainEventPubSubService: DomainEventPubSubService,
   ) {
-    this.pubsub.subscribe(OrderCreated, this.logEvent);
+    this.domainEventPubSubService.subscribe(
+      OrderCreatedDomainEvent,
+      this.logEvent.bind(this),
+    );
   }
 
-  async logEvent(ctx: Context, event: Event<typeof OrderCreated>): Promise<void> {
-    const topic = event.topic.toString();
+  async logEvent(
+    ctx: Context,
+    event: DomainEvent<typeof OrderCreatedDomainEvent>,
+  ): Promise<void> {
+    const timestamp = ctx.getTimestamp();
+    const topic = event.type.toString();
     const orderID = event.msg.orderID;
-    console.log(`> Log from Service B: receiving event from topic: ${topic}: with orderID: ${orderID}: at: ${ctx.getTimestamp()}`);
+
+    console.log(
+      `> ${timestamp}: Log from Service B: receiving domain-event: ${topic}: with orderID: ${orderID}`,
+    );
   }
 }
 ```
@@ -100,12 +109,12 @@ export class ServiceBEventHandler {
 export const TestCmd = Symbol('TestCmd');
 
 declare module 'src/core/command' {
-  interface CmdMsgContract {
+  interface CommandContract {
     [TestCmd]: {
       shouldSuccess: boolean;
     };
   }
-  interface RepMsgContract {
+  interface CommandReplyContract {
     [TestCmd]: {
       message: string;
     };
@@ -122,19 +131,22 @@ import { TestCmd } from '../service-b-contract';
 export class ServiceBCommandHandler {
   constructor(
     @Inject(CommandServiceSymbol)
-    private readonly cmdRepService: CommandService,
+    private readonly cmdService: CommandService,
   ) {
-    this.cmdRepService.mapCommandWithHandler(TestCmd, this.handleTestCmd);
+    this.cmdService.mapCommandWithHandler(
+      TestCmd,
+      this.handleTestCmd.bind(this),
+    );
   }
 
   async handleTestCmd(
     ctx: Context,
-    cmdMsg: CmdMsgContract[typeof TestCmd],
-  ): Promise<RepMsgContract[typeof TestCmd]> {
+    cmdMsg: CommandContract[typeof TestCmd],
+  ): Promise<CommandReplyContract[typeof TestCmd]> {
     if (cmdMsg.shouldSuccess) {
-      return { message: `${ctx:getTimestamp()}: ok` };
+      return { message: `${ctx.getTimestamp()}: ok` };
     }
-    throw new Error(`${ctx:getTimestamp()}: failed`);
+    throw new Error(`${ctx.getTimestamp()}: failed`);
   }
 }
 ```
