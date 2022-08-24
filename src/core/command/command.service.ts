@@ -1,28 +1,28 @@
 import { Injectable } from '@nestjs/common';
-import { CmdMsgContract, CommandHandler } from 'src/core/command';
+import { CommandContract, CommandHandler } from 'src/core/command';
 import { Context } from '../context';
-import { RepMsgContract } from './contract';
+import { CommandReplyContract, CommandType } from './command';
 
 export const CommandServiceSymbol = Symbol('CommandService');
 
 export interface CommandService {
-  mapCommandWithHandler<T extends keyof CmdMsgContract>(
+  mapCommandWithHandler<T extends CommandType>(
     cmdType: T,
     cmdHandler: CommandHandler<T>,
   ): void;
 
-  sendCommand<T extends keyof CmdMsgContract>(
+  sendCommand<T extends CommandType>(
     ctx: Context,
     cmdType: T,
-    cmdMsg: CmdMsgContract[T],
-  ): Promise<RepMsgContract[T]>;
+    cmdMsg: CommandContract[T],
+  ): Promise<CommandReplyContract[T]>;
 }
 
 @Injectable()
 export class CommandServiceImpl implements CommandService {
   private readonly cmdHandlerMap = new Map<symbol, CommandHandler<any>>();
 
-  public mapCommandWithHandler<T extends keyof CmdMsgContract>(
+  public mapCommandWithHandler<T extends CommandType>(
     cmdType: T,
     cmdHandler: CommandHandler<T>,
   ): void {
@@ -33,16 +33,16 @@ export class CommandServiceImpl implements CommandService {
     this.cmdHandlerMap.set(cmdType, cmdHandler);
   }
 
-  public async sendCommand<T extends keyof CmdMsgContract>(
+  public async sendCommand<T extends CommandType>(
     ctx: Context,
     cmdType: T,
-    cmdMsg: CmdMsgContract[T],
-  ): Promise<RepMsgContract[T]> {
+    cmdMsg: CommandContract[T],
+  ): Promise<CommandReplyContract[T]> {
     const handler = this.mustGetCommandHandler(cmdType);
     return handler(ctx, cmdMsg);
   }
 
-  private mustGetCommandHandler<T extends keyof CmdMsgContract>(
+  private mustGetCommandHandler<T extends CommandType>(
     cmdType: T,
   ): CommandHandler<T> {
     const handler = this.cmdHandlerMap.get(cmdType);

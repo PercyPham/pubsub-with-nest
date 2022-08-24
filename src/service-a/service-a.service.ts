@@ -1,8 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { CommandService, CommandServiceSymbol } from 'src/core/command';
 import { Context } from 'src/core/context';
+import {
+  DomainEventPubSubService,
+  DomainEventPubSubServiceSymbol,
+} from 'src/core/domain-event';
 import { PubSubService, PubSubServiceSymbol } from 'src/core/pubsub';
-import { OrderCreated } from 'src/service-a-contract';
+import { OrderCreated, OrderCreatedDomainEvent } from 'src/service-a-contract';
 import { TestCmd } from 'src/service-b-contract';
 
 export const ServiceAServiceSymbol = Symbol('ServiceAService');
@@ -12,6 +16,8 @@ export class ServiceAService {
   constructor(
     @Inject(PubSubServiceSymbol)
     private readonly psService: PubSubService,
+    @Inject(DomainEventPubSubServiceSymbol)
+    private readonly domainEventPubSubService: DomainEventPubSubService,
     @Inject(CommandServiceSymbol)
     private readonly cmdService: CommandService,
   ) {}
@@ -33,6 +39,11 @@ export class ServiceAService {
 
     // test pubsub
     await this.psService.publish(ctx, OrderCreated, {
+      orderID,
+    });
+
+    // test domain-event pubsub
+    await this.domainEventPubSubService.publish(ctx, OrderCreatedDomainEvent, {
       orderID,
     });
   }

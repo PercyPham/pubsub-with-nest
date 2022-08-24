@@ -1,12 +1,12 @@
 export const TestCmd = Symbol('TestCmd');
 
 declare module 'src/core/command' {
-  interface CmdMsgContract {
+  interface CommandContract {
     [TestCmd]: {
       shouldSuccess: boolean;
     };
   }
-  interface RepMsgContract {
+  interface CommandReplyContract {
     [TestCmd]: {
       message: string;
     };

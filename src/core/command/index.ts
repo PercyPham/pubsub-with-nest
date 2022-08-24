@@ -1,3 +1,3 @@
-export * from './command.module';
+export * from './command';
 export * from './command.service';
-export * from './contract';
+export * from './command.module';

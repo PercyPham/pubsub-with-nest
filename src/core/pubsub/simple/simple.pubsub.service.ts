@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Context } from '../../context';
-import { EventHandler, EventMsgContract } from '../contract';
-import { Event } from '../contract';
+import { Event, EventHandler, EventMsgContract } from '../contract';
 import { genNewEventID, PubSubService, Unsubscribe } from '../pubsub.service';
 
 export type EventHandlingExceptionHandler = (e: Error) => Promise<void> | void;
@@ -43,9 +42,9 @@ export class SimplePubSubServiceImpl implements PubSubService {
   ): Promise<void> {
     const event = this.genEvent(ctx, topic, eventMsg);
     const handlers = this.registry.get(topic);
-    if (!handlers || handlers.length === 0) return;
+    if (!handlers || !handlers.length) return;
     handlers.forEach((handler) => {
-      this.handleEvent(ctx, handler, event);
+      this.handleEvent(handler, event);
     });
   }
 
@@ -63,12 +62,11 @@ export class SimplePubSubServiceImpl implements PubSubService {
   }
 
   private async handleEvent(
-    ctx: Context,
     eventHandler: EventHandler<any>,
     event: Event<any>,
   ): Promise<void> {
     try {
-      await eventHandler(ctx, event);
+      await eventHandler(event);
     } catch (err) {
       if (eventHandlingExceptionHandler) {
         await eventHandlingExceptionHandler(err);

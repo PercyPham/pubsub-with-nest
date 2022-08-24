@@ -1,4 +1,4 @@
-import { Context } from '../context';
+import { Timestamp } from 'src/core/common/data.types';
 
 const PlaceholderEvent = Symbol('PlaceholderEvent');
 
@@ -8,8 +8,6 @@ export interface EventMsgContract {
 
 /** uuid */
 export type EventID = string;
-/** milliseconds since epoch */
-export type Timestamp = number;
 
 export type Event<T extends keyof EventMsgContract> = {
   id: EventID;
@@ -19,6 +17,5 @@ export type Event<T extends keyof EventMsgContract> = {
 };
 
 export type EventHandler<T extends keyof EventMsgContract> = (
-  ctx: Context,
   event: Event<T>,
 ) => Promise<void>;
