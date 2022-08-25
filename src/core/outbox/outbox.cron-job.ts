@@ -14,6 +14,7 @@ export interface OutboxCronJob {
 
 const CRON_JOB_INTERVAL = 500;
 const MAX_TRY_ALLOWED = 3;
+const BATCH_LIMIT = 100;
 
 @Injectable()
 export class OutboxCronJobImpl implements OutboxCronJob {
@@ -42,6 +43,7 @@ export class OutboxCronJobImpl implements OutboxCronJob {
     const outboxes = await this.outboxRepo.getNotYetDespatchedOutboxes(ctx, {
       lastTryBefore: Date.now() - 10 * 1000, // 10s ago
       maxTryCount: MAX_TRY_ALLOWED - 1,
+      limit: BATCH_LIMIT,
     });
     if (!outboxes.length) return;
 

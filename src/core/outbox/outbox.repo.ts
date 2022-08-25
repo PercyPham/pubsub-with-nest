@@ -12,6 +12,7 @@ export interface OutboxRepo {
     options?: {
       lastTryBefore?: Timestamp;
       maxTryCount?: number;
+      limit?: number;
     },
   ): Promise<Outbox<any>[]>;
 
