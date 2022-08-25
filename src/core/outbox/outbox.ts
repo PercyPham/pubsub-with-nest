@@ -20,13 +20,12 @@ export type Outbox<T extends OutboxType> = {
   id: OutboxID;
   type: T;
   data: OutboxContract[T];
-  despatched: boolean;
   tryCount: number;
   lastTryAt: Timestamp;
   createdAt: Timestamp;
 };
 
-export type OutboxHandler<T extends OutboxType> = (
+export type OutboxDispatcher<T extends OutboxType> = (
   ctx: Context,
   outbox: Outbox<T>,
 ) => Promise<void>;

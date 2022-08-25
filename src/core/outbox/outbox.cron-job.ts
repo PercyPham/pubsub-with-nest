@@ -2,9 +2,9 @@ import { Inject, Injectable } from '@nestjs/common';
 import { Context, ContextService, ContextServiceSymbol } from '../context';
 import { Outbox, OutboxType } from './outbox';
 import {
-  OutboxHandlerRegistry,
-  OutboxHandlerRegistrySymbol,
-} from './outbox.handler-registry';
+  OutboxDispatcherRegistry,
+  OutboxDispatcherRegistrySymbol,
+} from './outbox.dispatcher-registry';
 import { OutboxRepo, OutboxRepoSymbol } from './outbox.repo';
 
 export const OutboxCronJobSymbol = Symbol('OutboxCronJob');
@@ -23,8 +23,8 @@ export class OutboxCronJobImpl implements OutboxCronJob {
     private readonly ctxService: ContextService,
     @Inject(OutboxRepoSymbol)
     private readonly outboxRepo: OutboxRepo,
-    @Inject(OutboxHandlerRegistrySymbol)
-    private readonly outboxHandlerRegistry: OutboxHandlerRegistry,
+    @Inject(OutboxDispatcherRegistrySymbol)
+    private readonly outboxDispatcherRegistry: OutboxDispatcherRegistry,
   ) {}
 
   start(): void {
@@ -56,17 +56,19 @@ export class OutboxCronJobImpl implements OutboxCronJob {
     ctx: Context,
     outbox: Outbox<T>,
   ): Promise<void> {
-    const handler = this.outboxHandlerRegistry.mustGetHandler(outbox.type);
+    const dispatcher = this.outboxDispatcherRegistry.mustGetDispatcher(
+      outbox.type,
+    );
 
+    // update try-count independently so it doesn't depend on success/failure of outbox handling
     outbox.lastTryAt = ctx.getTimestamp();
     outbox.tryCount++;
     await this.outboxRepo.update(ctx, outbox);
 
     const [trxCtx, trxFinisher] = ctx.withTransaction();
     try {
-      outbox.despatched = true;
-      await this.outboxRepo.update(trxCtx, outbox);
-      await handler(ctx, outbox);
+      await this.outboxRepo.removeOutbox(trxCtx, outbox.id);
+      await dispatcher(trxCtx, outbox); // must be the last operation before committing transaction
       await trxFinisher.commit();
     } catch (err) {
       console.log(`Error: handling outbox: ${JSON.stringify(outbox)}\n`, err);

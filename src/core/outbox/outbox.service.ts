@@ -1,18 +1,18 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Context } from '../context';
-import { Outbox, OutboxHandler, OutboxType } from './outbox';
+import { Outbox, OutboxDispatcher, OutboxType } from './outbox';
 import {
-  OutboxHandlerRegistry,
-  OutboxHandlerRegistrySymbol,
-} from './outbox.handler-registry';
+  OutboxDispatcherRegistry,
+  OutboxDispatcherRegistrySymbol,
+} from './outbox.dispatcher-registry';
 import { OutboxRepo, OutboxRepoSymbol } from './outbox.repo';
 
 export const OutboxServiceSymbol = Symbol('OutboxService');
 
 export interface OutboxService {
-  registerOutboxHandler<T extends OutboxType>(
+  registerOutboxDispatcher<T extends OutboxType>(
     outboxType: T,
-    handler: OutboxHandler<T>,
+    dispatcher: OutboxDispatcher<T>,
   ): void;
 
   add<T extends OutboxType>(ctx: Context, outbox: Outbox<T>): Promise<void>;
@@ -21,17 +21,20 @@ export interface OutboxService {
 @Injectable()
 export class OutboxServiceImpl implements OutboxService {
   constructor(
-    @Inject(OutboxHandlerRegistrySymbol)
-    private readonly outboxHandlerRegistry: OutboxHandlerRegistry,
+    @Inject(OutboxDispatcherRegistrySymbol)
+    private readonly outboxDispatcherRegistry: OutboxDispatcherRegistry,
     @Inject(OutboxRepoSymbol)
     private readonly outboxRepo: OutboxRepo,
   ) {}
 
-  registerOutboxHandler<T extends OutboxType>(
+  registerOutboxDispatcher<T extends OutboxType>(
     outboxType: T,
-    handler: OutboxHandler<T>,
+    dispatcher: OutboxDispatcher<T>,
   ): void {
-    this.outboxHandlerRegistry.registerOutboxHandler(outboxType, handler);
+    this.outboxDispatcherRegistry.registerOutboxDispatcher(
+      outboxType,
+      dispatcher,
+    );
   }
 
   add<T extends OutboxType>(ctx: Context, outbox: Outbox<T>): Promise<void> {
