@@ -5,9 +5,20 @@ import { OutboxRepo, OutboxRepoSymbol } from './outbox.repo';
 
 export const OutboxDispatcherServiceSymbol = Symbol('OutboxDispatcherService');
 
+export type DispatchOutboxErrorHandler = (
+  err: Error,
+  outbox: Outbox<any>,
+) => Promise<void> | void;
+
 @Injectable()
 export class OutboxDispatcherService {
   private readonly registry = new Map<string, OutboxDispatcher<any>>();
+
+  private dispatchErrorHandler: DispatchOutboxErrorHandler = (err, outbox) => {
+    console.log(`Error dispatching outbox: ${outbox.type}`);
+    console.log(`Outbox Content: ${JSON.stringify(outbox)}`);
+    console.log(err);
+  };
 
   constructor(
     @Inject(ContextServiceSymbol)
@@ -27,23 +38,35 @@ export class OutboxDispatcherService {
     this.registry.set(outboxType, dispatcher);
   }
 
-  async dispatch<T extends OutboxType>(outbox: Outbox<T>): Promise<void> {
-    const ctx = this.ctxService.createNewContext();
-    const dispatcher = this.mustGetDispatcher(outbox.type);
+  registerDispatchErrorHandler(handler: DispatchOutboxErrorHandler): void {
+    this.dispatchErrorHandler = handler;
+  }
 
-    // update independently so it doesn't depend on success/failure of outbox handling
-    outbox.lastTryAt = ctx.getTimestamp();
+  triggerDispatching<T extends OutboxType>(outbox: Outbox<T>): void {
+    this.tryDispatching(outbox).catch(async (err) =>
+      this.dispatchErrorHandler(err, outbox),
+    );
+  }
+
+  private async tryDispatching<T extends OutboxType>(
+    outbox: Outbox<T>,
+  ): Promise<void> {
+    const ctx = this.ctxService.createNewContext();
+
+    // update independently so it doesn't depend on success/failure of dispatching
     outbox.tryCount++;
+    outbox.lastTryAt = ctx.getTimestamp();
     await this.outboxRepo.update(ctx, outbox);
 
     const [trxCtx, trxFinisher] = ctx.withTransaction();
     try {
+      const dispatch = this.mustGetDispatcher(outbox.type);
       await this.outboxRepo.removeOutbox(trxCtx, outbox.id);
-      await dispatcher(trxCtx, outbox); // must be the last operation before committing transaction
-      await trxFinisher.commit();
+      await dispatch(trxCtx, outbox); // must be the last operation before commit
+      trxFinisher.commit();
     } catch (err) {
-      console.log(`Error: handling outbox: ${JSON.stringify(outbox)}\n`, err);
-      await trxFinisher.rollback();
+      await this.dispatchErrorHandler(err, outbox);
+      trxFinisher.rollback();
     }
   }
 

@@ -41,13 +41,8 @@ export class OutboxCronJobImpl implements OutboxCronJob {
     });
     if (!outboxes.length) return;
 
-    outboxes.forEach((outbox) => {
-      this.outboxDispatcherService.dispatch(outbox).catch((err) => {
-        console.log(
-          `Error: dispatching outbox: ${JSON.stringify(outbox)}\n`,
-          err,
-        );
-      });
-    });
+    outboxes.forEach((outbox) =>
+      this.outboxDispatcherService.triggerDispatching(outbox),
+    );
   }
 }
