@@ -17,6 +17,8 @@ const MAX_TRY_ALLOWED = 3;
 
 @Injectable()
 export class OutboxCronJobImpl implements OutboxCronJob {
+  private cronjobStarted = false;
+
   constructor(
     @Inject(ContextServiceSymbol)
     private readonly ctxService: ContextService,
@@ -27,9 +29,11 @@ export class OutboxCronJobImpl implements OutboxCronJob {
   ) {}
 
   start(): void {
-    setInterval(async () => {
-      await this.dispatchNotYetDespatchedOutboxes();
-    }, CRON_JOB_INTERVAL);
+    if (this.cronjobStarted) {
+      throw new Error('duplicate call to start outbox cronjob');
+    }
+    setInterval(this.dispatchNotYetDespatchedOutboxes, CRON_JOB_INTERVAL);
+    this.cronjobStarted = true;
   }
 
   async dispatchNotYetDespatchedOutboxes(): Promise<void> {

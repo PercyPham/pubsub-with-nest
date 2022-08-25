@@ -5,7 +5,7 @@ import { OutboxRepo, OutboxRepoSymbol } from './outbox.repo';
 
 export const OutboxDispatcherServiceSymbol = Symbol('OutboxDispatcherService');
 
-export type DispatchOutboxErrorHandler = (
+export type DispatchErrorHandler = (
   err: Error,
   outbox: Outbox<any>,
 ) => Promise<void> | void;
@@ -14,7 +14,8 @@ export type DispatchOutboxErrorHandler = (
 export class OutboxDispatcherService {
   private readonly registry = new Map<string, OutboxDispatcher<any>>();
 
-  private dispatchErrorHandler: DispatchOutboxErrorHandler = (err, outbox) => {
+  private hasNewDispatchErrHandler = false;
+  private dispatchErrorHandler: DispatchErrorHandler = (err, outbox) => {
     console.log(`Error dispatching outbox: ${outbox.type}`);
     console.log(`Outbox Content: ${JSON.stringify(outbox)}`);
     console.log(err);
@@ -38,8 +39,12 @@ export class OutboxDispatcherService {
     this.registry.set(outboxType, dispatcher);
   }
 
-  registerDispatchErrorHandler(handler: DispatchOutboxErrorHandler): void {
+  registerDispatchErrorHandler(handler: DispatchErrorHandler): void {
+    if (this.hasNewDispatchErrHandler) {
+      throw new Error('Already overwrite dispatch error handler');
+    }
     this.dispatchErrorHandler = handler;
+    this.hasNewDispatchErrHandler = true;
   }
 
   triggerDispatching<T extends OutboxType>(outbox: Outbox<T>): void {
