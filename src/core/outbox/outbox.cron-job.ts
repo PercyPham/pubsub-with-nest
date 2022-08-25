@@ -1,10 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { Context, ContextService, ContextServiceSymbol } from '../context';
-import { Outbox, OutboxType } from './outbox';
+import { ContextService, ContextServiceSymbol } from '../context';
 import {
-  OutboxDispatcherRegistry,
-  OutboxDispatcherRegistrySymbol,
-} from './outbox.dispatcher-registry';
+  OutboxDispatcherService,
+  OutboxDispatcherServiceSymbol,
+} from './outbox.dispatcher.service';
 import { OutboxRepo, OutboxRepoSymbol } from './outbox.repo';
 
 export const OutboxCronJobSymbol = Symbol('OutboxCronJob');
@@ -23,8 +22,8 @@ export class OutboxCronJobImpl implements OutboxCronJob {
     private readonly ctxService: ContextService,
     @Inject(OutboxRepoSymbol)
     private readonly outboxRepo: OutboxRepo,
-    @Inject(OutboxDispatcherRegistrySymbol)
-    private readonly outboxDispatcherRegistry: OutboxDispatcherRegistry,
+    @Inject(OutboxDispatcherServiceSymbol)
+    private readonly outboxDispatcherService: OutboxDispatcherService,
   ) {}
 
   start(): void {
@@ -43,36 +42,12 @@ export class OutboxCronJobImpl implements OutboxCronJob {
     if (!outboxes.length) return;
 
     outboxes.forEach((outbox) => {
-      this.dispatchOutbox(ctx, outbox).catch((err) => {
+      this.outboxDispatcherService.dispatch(outbox).catch((err) => {
         console.log(
           `Error: dispatching outbox: ${JSON.stringify(outbox)}\n`,
           err,
         );
       });
     });
-  }
-
-  async dispatchOutbox<T extends OutboxType>(
-    ctx: Context,
-    outbox: Outbox<T>,
-  ): Promise<void> {
-    const dispatcher = this.outboxDispatcherRegistry.mustGetDispatcher(
-      outbox.type,
-    );
-
-    // update try-count independently so it doesn't depend on success/failure of outbox handling
-    outbox.lastTryAt = ctx.getTimestamp();
-    outbox.tryCount++;
-    await this.outboxRepo.update(ctx, outbox);
-
-    const [trxCtx, trxFinisher] = ctx.withTransaction();
-    try {
-      await this.outboxRepo.removeOutbox(trxCtx, outbox.id);
-      await dispatcher(trxCtx, outbox); // must be the last operation before committing transaction
-      await trxFinisher.commit();
-    } catch (err) {
-      console.log(`Error: handling outbox: ${JSON.stringify(outbox)}\n`, err);
-      await trxFinisher.rollback();
-    }
   }
 }

@@ -2,17 +2,17 @@ import { Module } from '@nestjs/common';
 import { ContextModule } from '../context';
 import { OutboxCronJobImpl, OutboxCronJobSymbol } from './outbox.cron-job';
 import {
-  OutboxDispatcherRegistry,
-  OutboxDispatcherRegistrySymbol,
-} from './outbox.dispatcher-registry';
+  OutboxDispatcherService,
+  OutboxDispatcherServiceSymbol,
+} from './outbox.dispatcher.service';
 import { OutboxServiceImpl, OutboxServiceSymbol } from './outbox.service';
 
 @Module({
   imports: [ContextModule],
   providers: [
     {
-      provide: OutboxDispatcherRegistrySymbol,
-      useClass: OutboxDispatcherRegistry,
+      provide: OutboxDispatcherServiceSymbol,
+      useClass: OutboxDispatcherService,
     },
     {
       provide: OutboxCronJobSymbol,

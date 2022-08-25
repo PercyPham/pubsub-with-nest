@@ -2,9 +2,9 @@ import { Inject, Injectable } from '@nestjs/common';
 import { Context } from '../context';
 import { Outbox, OutboxDispatcher, OutboxType } from './outbox';
 import {
-  OutboxDispatcherRegistry,
-  OutboxDispatcherRegistrySymbol,
-} from './outbox.dispatcher-registry';
+  OutboxDispatcherService,
+  OutboxDispatcherServiceSymbol,
+} from './outbox.dispatcher.service';
 import { OutboxRepo, OutboxRepoSymbol } from './outbox.repo';
 
 export const OutboxServiceSymbol = Symbol('OutboxService');
@@ -21,8 +21,8 @@ export interface OutboxService {
 @Injectable()
 export class OutboxServiceImpl implements OutboxService {
   constructor(
-    @Inject(OutboxDispatcherRegistrySymbol)
-    private readonly outboxDispatcherRegistry: OutboxDispatcherRegistry,
+    @Inject(OutboxDispatcherServiceSymbol)
+    private readonly outboxDispatcherService: OutboxDispatcherService,
     @Inject(OutboxRepoSymbol)
     private readonly outboxRepo: OutboxRepo,
   ) {}
@@ -31,7 +31,7 @@ export class OutboxServiceImpl implements OutboxService {
     outboxType: T,
     dispatcher: OutboxDispatcher<T>,
   ): void {
-    this.outboxDispatcherRegistry.registerOutboxDispatcher(
+    this.outboxDispatcherService.registerOutboxDispatcher(
       outboxType,
       dispatcher,
     );
