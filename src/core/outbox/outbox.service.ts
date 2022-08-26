@@ -19,12 +19,15 @@ export interface OutboxService {
 
   registerDispatchErrorHandler(handler: DispatchErrorHandler): void;
 
+  /**
+   * There should only be one cronjob running at a time in entire replicas of this service.
+   */
   startOutboxDispatchingCronJob(): void;
 
-  addAndTriggerDispatchingImmediately<T extends OutboxType>(
-    ctx: Context,
-    outbox: Outbox<T>,
-  ): Promise<void>;
+  add<T extends OutboxType>(ctx: Context, outbox: Outbox<T>): Promise<void>;
+
+  /** Just trigger dispatching outboxes, doesn't care and doesn't wait for result. */
+  triggerDispatching(outboxes: Outbox<any>[]): void;
 }
 
 @Injectable()
@@ -56,11 +59,14 @@ export class OutboxServiceImpl implements OutboxService {
     this.outboxCronJob.start();
   }
 
-  async addAndTriggerDispatchingImmediately<T extends OutboxType>(
+  async add<T extends OutboxType>(
     ctx: Context,
     outbox: Outbox<T>,
   ): Promise<void> {
     await this.outboxRepo.add(ctx, outbox);
-    this.outboxDispatcherService.triggerDispatching(outbox);
+  }
+
+  triggerDispatching(outboxes: Outbox<any>[]): void {
+    this.outboxDispatcherService.triggerDispatching(outboxes);
   }
 }

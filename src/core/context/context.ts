@@ -23,10 +23,13 @@ export class Context {
   }
 
   public withTransaction(): [Context, TransactionFinisher] {
+    if (this.isDbTrx) {
+      throw new Error('already in db transaction');
+    }
     const ctx = new Context({
       timestamp: this.timestamp,
       dbReadConn: this.dbReadConn,
-      dbWriteConn: this.dbWriteConn,
+      dbWriteConn: null,
     });
     ctx.isDbTrx = true;
     ctx.trxProvider = this.dbWriteConn.transactionProvider();

@@ -4,7 +4,7 @@ import {
   OutboxDispatcherService,
   OutboxDispatcherServiceSymbol,
 } from './outbox.dispatcher.service';
-import { OutboxRepo, OutboxRepoSymbol } from './outbox.repo';
+import { SortingOptions, OutboxRepo, OutboxRepoSymbol } from './outbox.repo';
 
 export const OutboxCronJobSymbol = Symbol('OutboxCronJob');
 
@@ -13,8 +13,9 @@ export interface OutboxCronJob {
 }
 
 const CRON_JOB_INTERVAL = 500;
+const WAITING_TIME_BEFORE_RETRY = 10 * 1000; // 10 seconds
 const MAX_TRY_ALLOWED = 3;
-const BATCH_LIMIT = 100;
+const OUTBOX_DISPATCHING_BATCH_LIMIT = 100;
 
 @Injectable()
 export class OutboxCronJobImpl implements OutboxCronJob {
@@ -33,22 +34,28 @@ export class OutboxCronJobImpl implements OutboxCronJob {
     if (this.cronjobStarted) {
       throw new Error('duplicate call to start outbox cronjob');
     }
-    setInterval(this.dispatchNotYetDespatchedOutboxes, CRON_JOB_INTERVAL);
     this.cronjobStarted = true;
+    setInterval(async () => {
+      await this.dispatchNotYetDespatchedOutboxes();
+    }, CRON_JOB_INTERVAL);
   }
+
+  private sleep = (ms: number): Promise<void> =>
+    new Promise((res) => {
+      setTimeout(res, ms);
+    });
 
   async dispatchNotYetDespatchedOutboxes(): Promise<void> {
     const ctx = this.ctxService.createNewContext();
 
     const outboxes = await this.outboxRepo.getNotYetDespatchedOutboxes(ctx, {
-      lastTryBefore: Date.now() - 10 * 1000, // 10s ago
+      lastTryBefore: Date.now() - WAITING_TIME_BEFORE_RETRY,
       maxTryCount: MAX_TRY_ALLOWED - 1,
-      limit: BATCH_LIMIT,
+      limit: OUTBOX_DISPATCHING_BATCH_LIMIT,
+      sortLastTryAt: SortingOptions.ASC,
     });
     if (!outboxes.length) return;
 
-    outboxes.forEach((outbox) =>
-      this.outboxDispatcherService.triggerDispatching(outbox),
-    );
+    await this.outboxDispatcherService.tryDispatching(ctx, outboxes);
   }
 }

@@ -1,24 +1,32 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { ContextService, ContextServiceSymbol } from '../context';
+import { Context, ContextService, ContextServiceSymbol } from '../context';
 import { Outbox, OutboxDispatcher, OutboxType } from './outbox';
 import { OutboxRepo, OutboxRepoSymbol } from './outbox.repo';
 
 export const OutboxDispatcherServiceSymbol = Symbol('OutboxDispatcherService');
 
 export type DispatchErrorHandler = (
+  ctx: Context,
   err: Error,
-  outbox: Outbox<any>,
+  outbox?: Outbox<any>,
 ) => Promise<void> | void;
 
 @Injectable()
 export class OutboxDispatcherService {
-  private readonly registry = new Map<string, OutboxDispatcher<any>>();
+  private readonly dispatcherRegistry = new Map<
+    OutboxType,
+    OutboxDispatcher<any>
+  >();
 
   private hasNewDispatchErrHandler = false;
-  private dispatchErrorHandler: DispatchErrorHandler = (err, outbox) => {
-    console.log(`Error dispatching outbox: ${outbox.type}`);
-    console.log(`Outbox Content: ${JSON.stringify(outbox)}`);
-    console.log(err);
+  private dispatchErrorHandler: DispatchErrorHandler = (_, err, outbox) => {
+    let errMsg = `Error while dispatching outbox: ${err.message}`;
+    if (outbox) {
+      errMsg += `\nOutbox Type: ${outbox.type}`;
+      errMsg += `\nOutbox Content: ${JSON.stringify(outbox)}`;
+    }
+    errMsg += `\n${err}`;
+    console.log(errMsg);
   };
 
   constructor(
@@ -32,11 +40,11 @@ export class OutboxDispatcherService {
     outboxType: T,
     dispatcher: OutboxDispatcher<T>,
   ): void {
-    const found = this.registry.get(outboxType);
+    const found = this.dispatcherRegistry.get(outboxType);
     if (found) {
       throw new Error(`duplicate outbox dispatcher for "${outboxType}"`);
     }
-    this.registry.set(outboxType, dispatcher);
+    this.dispatcherRegistry.set(outboxType, dispatcher);
   }
 
   registerDispatchErrorHandler(handler: DispatchErrorHandler): void {
@@ -47,38 +55,47 @@ export class OutboxDispatcherService {
     this.hasNewDispatchErrHandler = true;
   }
 
-  triggerDispatching<T extends OutboxType>(outbox: Outbox<T>): void {
-    this.tryDispatching(outbox).catch(async (err) =>
-      this.dispatchErrorHandler(err, outbox),
-    );
+  triggerDispatching(outboxes: Outbox<any>[]): void {
+    const ctx = this.ctxService.createNewContext();
+    this.tryDispatching(ctx, outboxes).catch(async (err) => {
+      await this.dispatchErrorHandler(ctx, err);
+    });
   }
 
-  private async tryDispatching<T extends OutboxType>(
+  async tryDispatching(ctx: Context, outboxes: Outbox<any>[]): Promise<void> {
+    outboxes.forEach((outbox) => {
+      outbox.tryCount++;
+      outbox.lastTryAt = ctx.getTimestamp();
+    });
+    await this.outboxRepo.updateMany(ctx, outboxes);
+
+    outboxes.forEach((outbox) => {
+      this.dispatch(ctx, outbox).catch(async (err) => {
+        await this.dispatchErrorHandler(ctx, err, outbox);
+      });
+    });
+  }
+
+  private async dispatch<T extends OutboxType>(
+    ctx: Context,
     outbox: Outbox<T>,
   ): Promise<void> {
-    const ctx = this.ctxService.createNewContext();
-
-    // update independently so it doesn't depend on success/failure of dispatching
-    outbox.tryCount++;
-    outbox.lastTryAt = ctx.getTimestamp();
-    await this.outboxRepo.update(ctx, outbox);
-
     const [trxCtx, trxFinisher] = ctx.withTransaction();
     try {
       const dispatch = this.mustGetDispatcher(outbox.type);
-      await this.outboxRepo.removeOutbox(trxCtx, outbox.id);
+      await this.outboxRepo.removeById(trxCtx, outbox.id);
       await dispatch(trxCtx, outbox); // must be the last operation before commit
       trxFinisher.commit();
     } catch (err) {
-      await this.dispatchErrorHandler(err, outbox);
       trxFinisher.rollback();
+      throw err;
     }
   }
 
   private mustGetDispatcher<T extends OutboxType>(
     outboxType: T,
   ): OutboxDispatcher<T> {
-    const dispatcher = this.registry.get(outboxType);
+    const dispatcher = this.dispatcherRegistry.get(outboxType);
     if (!dispatcher) {
       throw new Error(`outbox dispatcher for "${outboxType}" not found`);
     }

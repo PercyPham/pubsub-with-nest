@@ -14,10 +14,10 @@ export interface OutboxContract {
 export type OutboxType = keyof OutboxContract;
 
 /** uuid */
-export type OutboxID = string;
+export type OutboxId = string;
 
 export type Outbox<T extends OutboxType> = {
-  id: OutboxID;
+  id: OutboxId;
   type: T;
   data: OutboxContract[T];
   tryCount: number;
