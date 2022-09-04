@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Context } from '../context';
 import { Outbox, OutboxDispatcher, OutboxType } from './outbox';
-import { OutboxCronJob, OutboxCronJobSymbol } from './outbox.cron-job';
+import { OutboxCronJob, OutboxCronJobSymbol } from './outbox.cronjob';
 import {
   DispatchErrorHandler,
   OutboxDispatcherService,

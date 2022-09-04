@@ -1,24 +1,20 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ContextService, ContextServiceSymbol } from '../context';
 import {
+  CRON_JOB_INTERVAL,
+  OUTBOX_MAX_TRY_ALLOWED,
+  OutboxCronJob,
+  OUTBOX_DISPATCHING_BATCH_LIMIT,
+  OUTBOX_WAITING_TIME_BEFORE_RETRY,
+} from './outbox.cronjob';
+import {
   OutboxDispatcherService,
   OutboxDispatcherServiceSymbol,
 } from './outbox.dispatcher.service';
 import { SortingOptions, OutboxRepo, OutboxRepoSymbol } from './outbox.repo';
 
-export const OutboxCronJobSymbol = Symbol('OutboxCronJob');
-
-export interface OutboxCronJob {
-  start(): void;
-}
-
-const CRON_JOB_INTERVAL = 500;
-const WAITING_TIME_BEFORE_RETRY = 10 * 1000; // 10 seconds
-const MAX_TRY_ALLOWED = 3;
-const OUTBOX_DISPATCHING_BATCH_LIMIT = 100;
-
 @Injectable()
-export class OutboxCronJobImpl implements OutboxCronJob {
+export class OutboxCronJobSimpleImpl implements OutboxCronJob {
   private cronjobStarted = false;
 
   constructor(
@@ -40,19 +36,14 @@ export class OutboxCronJobImpl implements OutboxCronJob {
     }, CRON_JOB_INTERVAL);
   }
 
-  private sleep = (ms: number): Promise<void> =>
-    new Promise((res) => {
-      setTimeout(res, ms);
-    });
-
   async dispatchNotYetDespatchedOutboxes(): Promise<void> {
     const ctx = this.ctxService.createNewContext();
 
     const outboxes = await this.outboxRepo.getNotYetDespatchedOutboxes(ctx, {
-      lastTryBefore: Date.now() - WAITING_TIME_BEFORE_RETRY,
-      maxTryCount: MAX_TRY_ALLOWED - 1,
-      limit: OUTBOX_DISPATCHING_BATCH_LIMIT,
+      lastTryBefore: Date.now() - OUTBOX_WAITING_TIME_BEFORE_RETRY,
+      maxTryCount: OUTBOX_MAX_TRY_ALLOWED - 1,
       sortLastTryAt: SortingOptions.ASC,
+      limit: OUTBOX_DISPATCHING_BATCH_LIMIT,
     });
     if (!outboxes.length) return;
 

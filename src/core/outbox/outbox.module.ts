@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ContextModule } from '../context';
-import { OutboxCronJobImpl, OutboxCronJobSymbol } from './outbox.cron-job';
+import { OutboxCronJobSymbol } from './outbox.cronjob';
+import { OutboxCronJobSimpleImpl } from './outbox.cronjob.simple';
 import {
   OutboxDispatcherService,
   OutboxDispatcherServiceSymbol,
@@ -16,7 +17,7 @@ import { OutboxServiceImpl, OutboxServiceSymbol } from './outbox.service';
     },
     {
       provide: OutboxCronJobSymbol,
-      useClass: OutboxCronJobImpl,
+      useClass: OutboxCronJobSimpleImpl,
     },
     {
       provide: OutboxServiceSymbol,
