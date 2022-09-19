@@ -1,0 +1,7 @@
+Notes:
+
+OutboxService:
+- the trigger MUST happen AFTER the transaction commit
+
+
+- when add outboxes to DB, also add their outboxes (or their IDs) to array in Context object, so after transaction commit, we can call trigger by ids/outboxes (got from ctx).
