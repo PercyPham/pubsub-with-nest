@@ -103,11 +103,7 @@ export class OutboxCronJobCompetitiveImpl implements OutboxCronJob {
 
       // we are current runner now
 
-      const timeToExtendRunnerKeyPossessionTime =
-        this.currentRunner.expiredAt - 1 * SECOND;
-      setTimeout(() => {
-        this.tryToExtendRunnerKeyPossessionTime().catch(() => null); // don't care if failed
-      }, timeToExtendRunnerKeyPossessionTime - Date.now());
+      this.setTimeToExtendKeyPossessionWhenNearExpiration();
 
       while (this.isCurrentRunner()) {
         await this.dispatchNotYetDespatchedOutboxes();
@@ -144,6 +140,14 @@ export class OutboxCronJobCompetitiveImpl implements OutboxCronJob {
     }
   }
 
+  private setTimeToExtendKeyPossessionWhenNearExpiration(): void {
+    const extendAt = this.currentRunner.expiredAt - 1 * SECOND;
+
+    setTimeout(() => {
+      this.tryToExtendRunnerKeyPossessionTime().catch(() => null); // don't care if failed
+    }, extendAt - Date.now());
+  }
+
   private async tryToExtendRunnerKeyPossessionTime(): Promise<void> {
     if (!this.isCurrentRunner()) {
       throw new Error(
@@ -161,7 +165,10 @@ export class OutboxCronJobCompetitiveImpl implements OutboxCronJob {
       where: this.currentRunner,
     });
 
-    if (success) this.currentRunner = newRunnerInfo;
+    if (success) {
+      this.currentRunner = newRunnerInfo;
+      this.setTimeToExtendKeyPossessionWhenNearExpiration();
+    }
   }
 
   private isCurrentRunner(): boolean {
